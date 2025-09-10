@@ -5,8 +5,9 @@
 __all__ = ["compress_page"]
 
 
-from .middleware import CompressionMiddleware
 from django.utils.decorators import decorator_from_middleware
+
+from .middleware import CompressionMiddleware
 
 
 compress_page = decorator_from_middleware(CompressionMiddleware)

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,20 +6,19 @@
 __all__ = ["zstd_compress", "zstd_compress_stream"]
 
 
-from django.utils.text import StreamingBuffer
-
 import zstandard as zstd
+from django.utils.text import StreamingBuffer
 
 
 DEFAULT_LEVEL = 7
 
 
-def zstd_compress(content):
+def zstd_compress(content):  # noqa: D103
     cctx = zstd.ZstdCompressor(level=DEFAULT_LEVEL)
     return cctx.compress(content)
 
 
-def zstd_compress_stream(sequence):
+def zstd_compress_stream(sequence):  # noqa: D103
     buf = StreamingBuffer()
     cctx = zstd.ZstdCompressor(level=DEFAULT_LEVEL)
     with cctx.stream_writer(buf, write_return_read=False) as compressor:
