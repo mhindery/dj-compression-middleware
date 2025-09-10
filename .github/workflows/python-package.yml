@@ -28,8 +28,8 @@ jobs:
           cache-dependency-glob: "uv.lock"
       - name: Install the project
         run: |
-          uv add "django==${{ matrix.django-version }}"
           uv sync --python ${{ matrix.python-version }} --all-extras --frozen --compile-bytecode --group dev --group tests
+          uv add "django==${{ matrix.django-version }}"
       # - name: Lint with ruff
       #   run: |
       #     uv run ruff check --no-fix --output-format full --target-version py39
