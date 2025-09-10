@@ -1,10 +1,12 @@
-===========================================================================
-Django Compression Middleware
-===========================================================================
+# Dj Compression Middleware
+
+
+*Note: This repo is a fork of the project [django-compression-middleware](https://github.com/friedelwolff/django-compression-middleware). As the project did not seem maintained anymore, I forked the project in order
+to get some open PR's and issues resolved. Most of the credit goes to the original creator: Friedel Wolff.*
 
 
 This middleware implements compressed content encoding for HTTP. It is similar
-to Django's ``GZipMiddleware`` (`documentation`_), but additionally supports
+to Django's ``GZipMiddleware`` but additionally supports
 other compression methods. It is meant to be a drop-in replacement for Django's
 ``GZipMiddleware``. Its documentation — including security warnings — therefore
 apply here as well.
@@ -24,59 +26,49 @@ header. In order of preference:
 - Brotli (br)
 - gzip (gzip)
 
-Summary of the project status:
-
-* .. image:: https://img.shields.io/github/actions/workflow/status/friedelwolff/django-compression-middleware/main.yml
-     :target: https://github.com/friedelwolff/django-compression-middleware/actions
-* .. image:: https://img.shields.io/pypi/djversions/django-compression-middleware.svg
-* .. image:: https://img.shields.io/pypi/pyversions/django-compression-middleware.svg
-* .. image:: https://img.shields.io/pypi/implementation/django-compression-middleware.svg
-
-.. _`documentation`: https://docs.djangoproject.com/en/dev/ref/middleware/#module-django.middleware.gzip
-.. _`WhiteNoise`: https://whitenoise.readthedocs.io/
-.. _`Can I use... Brotli`: http://caniuse.com/#search=brotli
-
 Installation and usage
 ----------------------
 
 The following requirements are supported and tested in all reasonable
 combinations:
 
-- Python versions: 3.6–3.12
-- Interpreters: CPython and PyPy.
-- Django versions: 1.11–5.0
+- Python versions: 3.10–3.14
+- Django versions: 4.0–5.2
 
-.. code:: shell
+Add the package to your project, e.g.
 
-    pip install --upgrade django-compression-middleware
+```shell
+uv add dj-compression-middleware
+# or
+pip install dj-compression-middleware
+```
 
 To apply compression to all the views served by Django, add
-``compression_middleware.middleware.CompressionMiddleware`` to the
+``dj_compression_middleware.middleware.CompressionMiddleware`` to the
 ``MIDDLEWARE`` setting:
 
-.. code:: python
 
-    MIDDLEWARE = [
-        # ...
-        'compression_middleware.middleware.CompressionMiddleware',
-        # ...
-    ]
+```python
+MIDDLEWARE = [
+    # ...
+    'dj_compression_middleware.middleware.CompressionMiddleware',
+    # ...
+]
+```
 
 Remove ``GZipMiddleware`` and ``BrotliMiddleware`` if you used it before.
-Consult the Django documentation on the correct `ordering of middleware`_.
-
-.. _`ordering of middleware`: https://docs.djangoproject.com/en/dev/ref/middleware/#middleware-ordering
+Consult the Django documentation on the correct [ordering of middleware](https://docs.djangoproject.com/en/dev/ref/middleware/#middleware-ordering)
 
 Alternatively you can decorate views individually to serve them with
 compression:
 
-.. code:: python
+```python
+from dj_compression_middleware.decorators import compress_page
 
-    from compression_middleware.decorators import compress_page
-
-    @compress_page
-    def index_view(request):
-        ...
+@compress_page
+def index_view(request):
+    ...
+```
 
 Note that your browser might not send the ``br`` entry in the ``Accept-Encoding``
 header when you test without HTTPS (common on localhost). You can force it to
@@ -92,29 +84,17 @@ The code and tests in this project are based on Django's ``GZipMiddleware`` and
 Vašek Dohnal's ``django-brotli``. For compression, it uses the following modules
 to bind to fast C modules:
 
-- The `zstandard`_ bindings. It supports both a C module (for CPython) and CFFI
+- The `zstandard` bindings. It supports both a C module (for CPython) and CFFI
   which should be appropriate for PyPy. See the documentation for full details.
-- The `Brotli`_ bindings or `brotlipy`_. The latter is preferred on PyPy since
+- The `Brotli` bindings or `brotlipy`. The latter is preferred on PyPy since
   it is implemented using cffi. But both should work on both Python
   implementations.
-- Python's builtin `gzip`_ module.
-
-.. _zstandard: https://pypi.org/project/zstandard/
-.. _Brotli: https://pypi.org/project/Brotli/
-.. _brotlipy: https://pypi.org/project/brotlipy/
-.. _gzip: https://docs.python.org/3/library/gzip.html
-
-Further readding on Wikipedia:
-
-- `HTTP compression <https://en.wikipedia.org/wiki/HTTP_compression>`__
-- `Zstandard <http://www.zstd.net/>`__
-- `Brotli <https://en.wikipedia.org/wiki/Brotli>`__
-- `gzip <https://en.wikipedia.org/wiki/Gzip>`__
+- Python's builtin `gzip` module.
 
 Contributing
 ------------
 
-1. Clone this repository (``git clone ...``)
+1. Clone this repository
 2. Setup an environment using uv: ``uv sync --python-preference only-managed --python 3.12 --frozen --compile-bytecode --all-extras --group dev --group tests --group pages``
 3. Change some code
 4. Run the tests: in the project root simply execute ``uv run pytest``
@@ -124,5 +104,3 @@ License
 -------
 
 The MPL 2.0 License
-
-Copyright (c) 2019-2024 `Friedel Wolff <https://fwolff.net.za/>`_.
