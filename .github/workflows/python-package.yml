@@ -1,0 +1,85 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python package
+
+on:
+  push:
+    branches: ["master", "main"]
+    tags: ["*"]
+  pull_request:
+    branches: ["master", "main"]
+
+jobs:
+  check-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        django-version: ["4.1", "4.2", "5.0", "5.1", "5.2"]
+
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Install the project
+        run: |
+          uv sync --python ${{ matrix.python-version }} --all-extras --frozen --compile-bytecode --group dev --group tests
+          uv add "django==${{ matrix.django-version }}"
+      # - name: Lint with ruff
+      #   run: |
+      #     uv run ruff check --no-fix --output-format full --target-version py39
+      - name: Test with pytest
+        run: |
+          uv run pytest
+
+  build:
+    name: >-
+      Build the Python package
+    needs:
+      - check-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Set up Python "3.12"
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Build the package
+        run: |
+          uv build
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-to-pypi:
+    name: >-
+      Publish Python 🐍 distribution 📦 to PyPI
+    if: startsWith(github.ref, 'refs/tags/') # only publish to PyPI on tag pushes
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/dj-compression-middleware # Replace <package-name> with your PyPI project name
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

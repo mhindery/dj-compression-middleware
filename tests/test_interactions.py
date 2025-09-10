@@ -20,7 +20,7 @@ from django.http import (
     HttpResponse,
     StreamingHttpResponse,
 )
-from compression_middleware.middleware import CompressionMiddleware as GZipMiddleware
+from dj_compression_middleware.middleware import CompressionMiddleware as GZipMiddleware
 from django.middleware.http import ConditionalGetMiddleware
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
