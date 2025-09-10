@@ -10,16 +10,9 @@ authors = [
 description = "Django middleware to compress responses with gzip, brotli and zstd."
 version = "0.0.1"
 readme = "README.rst"
-requires-python = ">=3.9,<3.15"
+requires-python = ">=3.10,<3.15"
 classifiers = [
     'Framework :: Django',
-    'Framework :: Django :: 1.11',
-    'Framework :: Django :: 2.0',
-    'Framework :: Django :: 2.1',
-    'Framework :: Django :: 2.2',
-    'Framework :: Django :: 3.0',
-    'Framework :: Django :: 3.1',
-    'Framework :: Django :: 3.2',
     'Framework :: Django :: 4.0',
     'Framework :: Django :: 4.1',
     'Framework :: Django :: 4.2',
@@ -45,7 +38,7 @@ classifiers = [
 dependencies = [
     "brotli>=1.1.0 ; platform_python_implementation != 'PyPy'",
     "brotlipy>=0.7.0 ; platform_python_implementation == 'PyPy'",
-    "django>=1.11",
+    "django>=4.0",
     "zstandard>=0.24.0",
 ]
 
