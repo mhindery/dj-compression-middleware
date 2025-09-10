@@ -6,7 +6,7 @@ import brotli
 from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from django.test import RequestFactory, SimpleTestCase, TestCase
 
-from compression_middleware.decorators import compress_page
+from dj_compression_middleware.decorators import compress_page
 
 
 class CompressPageDecoratorTest(SimpleTestCase):

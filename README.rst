@@ -115,15 +115,10 @@ Contributing
 ------------
 
 1. Clone this repository (``git clone ...``)
-2. Create a virtualenv
-3. Install package dependencies: ``pip install --upgrade -r requirements_dev.txt``
-4. Change some code
-5. Run the tests: in the project root simply execute ``pytest``, and afterwards
-   preferably ``tox`` to test the full test matrix. Consider installing as many
-   supported interpreters as possible (having them in your ``PATH`` is often
-   sufficient).
-6. Submit a pull request and check for any errors reported by the Continuous
-   Integration service.
+2. Setup an environment using uv: ``uv sync --python-preference only-managed --python 3.12 --frozen --compile-bytecode --all-extras --group dev --group tests --group pages``
+3. Change some code
+4. Run the tests: in the project root simply execute ``uv run pytest``
+5. Submit a pull request and check for any errors reported by the Continuous Integration service.
 
 License
 -------

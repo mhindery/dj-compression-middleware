@@ -26,7 +26,7 @@ except NameError:
     import struct
     int2byte = struct.Struct(">B").pack
 
-from compression_middleware.middleware import CompressionMiddleware, compressor
+from dj_compression_middleware.middleware import CompressionMiddleware, compressor
 from .utils import UTF8_LOREM_IPSUM_IN_CZECH
 
 

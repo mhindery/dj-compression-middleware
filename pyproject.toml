@@ -1,0 +1,292 @@
+[build-system]
+requires = ["uv_build>=0.8.15,<0.9.0"]
+build-backend = "uv_build"
+
+[project]
+name = "dj_compression_middleware"
+authors = [
+    { name = "Mathieu Hinderyckx", email = "mathieu.hinderyckx@gmail.com" },
+]
+description = "Django middleware to compress responses with gzip, brotli and zstd."
+version = "0.0.1"
+readme = "README.rst"
+requires-python = ">=3.9,<3.15"
+classifiers = [
+    'Framework :: Django',
+    'Framework :: Django :: 1.11',
+    'Framework :: Django :: 2.0',
+    'Framework :: Django :: 2.1',
+    'Framework :: Django :: 2.2',
+    'Framework :: Django :: 3.0',
+    'Framework :: Django :: 3.1',
+    'Framework :: Django :: 3.2',
+    'Framework :: Django :: 4.0',
+    'Framework :: Django :: 4.1',
+    'Framework :: Django :: 4.2',
+    'Framework :: Django :: 5.0',
+    'Framework :: Django :: 5.1',
+    'Framework :: Django :: 5.2',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
+    'Natural Language :: English',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware',
+    'Topic :: Internet :: WWW/HTTP :: ASGI :: Middleware',
+]
+dependencies = [
+    "brotli>=1.1.0 ; platform_python_implementation != 'PyPy'",
+    "brotlipy>=0.7.0 ; platform_python_implementation == 'PyPy'",
+    "django>=1.11",
+    "zstandard>=0.24.0",
+]
+
+[tool.setuptools_scm]
+version_file = "src/dj_compression_middleware/_version.py"
+
+[dependency-groups]
+dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.12.1"]
+tests = [
+    "coverage>=7.5.3",
+    "pytest>=8.3.3",
+    "pytest-cov>=5.0.0",
+    "pytest-django>=4.8.0",
+    "pytest-env>=1.1.5",
+    "pytest-randomly>=3.15.0",
+    "pytest-sugar>=1.0.0",
+]
+
+[tool.uv]
+package = true
+cache-keys = [{ file = "pyproject.toml" }]
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+    "sys_platform == 'win32'",
+]
+
+# ==== ruff ====
+[tool.ruff]
+line-length = 120
+extend-include = ["*.ipynb"]
+indent-width = 4
+preview = false
+required-version = ">=0.4.5"
+target-version = "py312"
+unsafe-fixes = true
+
+# Overwritten in CI/CD
+output-format = "full"
+fix = true
+
+[tool.ruff.lint]
+preview = true
+select = [
+    # https://docs.astral.sh/ruff/rules/#rules
+    "A",
+    "ANN",
+    "ARG",
+    "ASYNC",
+    "B",
+    "BLE",
+    "C4",
+    "COM",
+    "D",
+    "DOC",
+    "E",
+    "F",
+    "FBT",
+    "FLY",
+    "FURB",
+    "G",
+    "I",
+    "ISC",
+    "N",
+    "PD",
+    "PERF",
+    "PGH",
+    "PIE",
+    "PL",
+    "PT",
+    "PTH",
+    "Q",
+    "R",
+    "RET",
+    "RSE",
+    "RUF",
+    "SIM",
+    "SLF",
+    "SLOT",
+    "T20",
+    "TRY",
+    "UP",
+]
+
+ignore = [
+    "ANN002",  # Missing type annotations for *args
+    "ANN003",  # Missing type annotations for **kwargs
+    "ANN204",  # Missing return type annotation for special method `__init__`
+    "ANN401",  # Disallow Any type hints
+    "COM812",  # Trailing comma missing. The ruff format always removes this on e.g. a list of function arguments.
+    "D100",    # Missing docstring in public module
+    "D105",    # Missing docstring in magic method
+    "D106",    # Missing docstring in public nested class
+    "D202",    # No blank line after function docstring
+    "E501",    # Line too long
+    "ISC001",  # Conflicting with formatter
+    "PD011",   # pandas-use-of-dot-values. Ignored because it gives a lot of false positives every time .values is used on something.
+    "Q000",    # Single quotes found but double quotes preferred
+    "RUF012",  # mutable-class-default. Class attributes would required type annotations everywhere if enabled.
+    "TRY002",  # Create your own exception
+    "TRY003",  # Avoid specifying long messages outside the exception class
+    "PGH003",  # Require specific codes when silencing linting.
+    "FBT001",  # Boolean arguments in function calls
+    "FBT002",  # Boolean arguments in function calls
+    "RUF100",  # Report unused noqa directives. This clashes with the leniency from the ignore above this one.
+    "DOC501",  # Raised exception {id} missing from docstring
+    "PLR6301", # Not using self in a method
+    "DOC201",  # Not mentioning 'return' explicitly in a docstring
+    "A005",    # Module name is shadowing a python builtin module
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = ["T201"]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+preview = false
+line-ending = "auto"
+indent-style = "space"
+quote-style = "preserve"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+exclude = ["*.pyi", "**/migrations/*.py"]
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = true
+
+# 4. Ignore `E402` (import violations) in all `__init__.py` files, and in select subdirectories.
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "D104"]
+"**/{tests,docs,tools}/*" = [
+    "E402",
+    "D101",
+    "D103",
+    "ARG001",
+    "ANN201",
+    "PLR2004",
+    "PLR0914",
+    "PLR0915",
+]
+"test*.py" = [
+    "E402",
+    "D101",
+    "D103",
+    "ANN201",
+    "ARG001",
+    "PLR2004",
+    "PLR0914",
+    "PLR0915",
+]
+# Django-specific rules
+"**/migrations/*.py" = ["I", "D", "RUF012", "RUF001"]
+"**/factories.py" = ["D106", "D101"]
+"**/management/commands/*.py" = ["D101"]
+"apps.py" = ["D101", "D102", "PLC0415", "F401"]
+"admin.py" = ["D101", "D103", "D102", "RUF012", "ARG002"]
+"**/*views.py" = ["ARG002"]
+"forms.py" = ["D101", "RUF012"]
+"**/api/serializers.py" = ["D101"]
+
+[tool.ruff.lint.pylint]
+max-args = 20
+max-positional-args = 20
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+avoid-escape = true
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+ignore-fully-untyped = true     # allows for gradual typing
+suppress-none-returning = false
+
+[tool.ruff.lint.flake8-unused-arguments]
+ignore-variadic-names = true
+
+[tool.ruff.lint.isort]
+force-single-line = false
+combine-as-imports = true
+force-wrap-aliases = false
+detect-same-package = true
+split-on-trailing-comma = false
+known-local-folder = ["src"]
+lines-after-imports = 2
+
+# ==== pytest ====
+[tool.pytest_env]
+ENVIRONMENT = "test"
+
+[tool.pytest]
+color = "yes"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-s --durations=5 -v --import-mode=importlib --cov --cov-report=term --cov-report=html --cov-report=xml --junit-xml=junit.xml"
+python_files = ["tests/tests.py", "tests/test_*.py"]
+
+junit_family = 'xunit2'
+junit_suite_name = "test_suite"
+junit_logging = 'all'
+junit_log_passing_tests = true
+junit_duration_report = "call"
+
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# ==== Coverage ====
+[tool.coverage.run]
+omit = [
+    "*/migrations/*",
+    "*/media/*",
+    ".venv/*",
+    "terraform/*",
+    "htmlcov/*",
+    "staticfiles/*",
+    "requirements/*",
+    "manage.py",
+    "asgi.py",
+    "wsgi.py",
+    "*/.vscode/*",
+]
+plugins = []
+branch = true
+
+[tool.coverage.report]
+format = "text"
+skip_empty = true
+precision = 2
+
+[tool.coverage.term]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
