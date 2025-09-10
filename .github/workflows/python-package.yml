@@ -17,6 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        django-version: ["1.11", "2.2", "3.2", "4.2", "5.2"]
 
     steps:
       - uses: actions/checkout@v5
@@ -26,7 +27,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install the project
-        run: uv sync --python ${{ matrix.python-version }} --all-extras --frozen --compile-bytecode --group dev --group tests
+        run: |
+          uv add "django==${{ matrix.django-version }}"
+          uv sync --python ${{ matrix.python-version }} --all-extras --frozen --compile-bytecode --group dev --group tests
       # - name: Lint with ruff
       #   run: |
       #     uv run ruff check --no-fix --output-format full --target-version py39
