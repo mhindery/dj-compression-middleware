@@ -1,10 +1,7 @@
-# -*- encoding: utf-8 -*-
-from __future__ import unicode_literals
 
 import brotli
-
-from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
-from django.test import RequestFactory, SimpleTestCase, TestCase
+from django.http import HttpResponse, StreamingHttpResponse
+from django.test import RequestFactory, SimpleTestCase
 
 from dj_compression_middleware.decorators import compress_page
 
@@ -38,8 +35,8 @@ class CompressPageDecoratorTest(SimpleTestCase):
             return HttpResponse()
 
         r = a_small_view(self.req)
-        self.assertFalse(r.has_header("Content-Encoding"))
-        self.assertEqual(r.content, b"")
+        assert not r.has_header("Content-Encoding")
+        assert r.content == b""
 
     def test_normal_page(self):
         @compress_page
@@ -47,9 +44,9 @@ class CompressPageDecoratorTest(SimpleTestCase):
             return self.resp
 
         r = a_view(self.req)
-        self.assertEqual(r.get("Content-Encoding"), "br")
-        self.assertEqual(r.get("Content-Length"), str(len(r.content)))
-        self.assertTrue(brotli.decompress(r.content), self.compressible_string)
+        assert r.get("Content-Encoding") == "br"
+        assert r.get("Content-Length") == str(len(r.content))
+        assert brotli.decompress(r.content), self.compressible_string
 
     def test_streaming_page(self):
         @compress_page
@@ -57,9 +54,6 @@ class CompressPageDecoratorTest(SimpleTestCase):
             return self.stream_resp_unicode
 
         r = a_streaming_view(self.req)
-        self.assertEqual(r.get("Content-Encoding"), "br")
-        self.assertFalse(r.has_header("Content-Length"))
-        self.assertEqual(
-            brotli.decompress(b"".join(r)),
-            b"".join(x.encode("utf-8") for x in self.sequence_unicode)
-        )
+        assert r.get("Content-Encoding") == "br"
+        assert not r.has_header("Content-Length")
+        assert brotli.decompress(b"".join(r)) == b"".join(x.encode("utf-8") for x in self.sequence_unicode)

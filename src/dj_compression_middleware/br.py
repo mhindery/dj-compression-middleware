@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,17 +6,17 @@
 __all__ = ["brotli_compress", "brotli_compress_stream"]
 
 
-from brotli import compress, Compressor
+from brotli import Compressor, compress
 
 
 DEFAULT_LEVEL = 4
 
 
-def brotli_compress(content):
+def brotli_compress(content):  # noqa: D103
     return compress(content, quality=DEFAULT_LEVEL)
 
 
-def brotli_compress_stream(sequence):
+def brotli_compress_stream(sequence):  # noqa: D103
     yield b""
 
     compressor = Compressor(quality=DEFAULT_LEVEL)

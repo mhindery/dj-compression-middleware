@@ -30,9 +30,9 @@ jobs:
         run: |
           uv sync --python ${{ matrix.python-version }} --all-extras --frozen --compile-bytecode --group dev --group tests
           uv add "django==${{ matrix.django-version }}"
-      # - name: Lint with ruff
-      #   run: |
-      #     uv run ruff check --no-fix --output-format full --target-version py39
+      - name: Lint with ruff
+        run: |
+          uv run ruff check --no-fix --output-format full --target-version py39
       - name: Test with pytest
         run: |
           uv run pytest
