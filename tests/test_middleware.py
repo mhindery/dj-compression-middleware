@@ -3,11 +3,18 @@
 import gzip
 import random
 import struct
+import sys
 from io import BytesIO
 from unittest import TestCase
 
 import brotli
-import zstandard as zstd
+
+
+if sys.version_info >= (3, 14):
+    # Python 3.14+ ships zstd in the standard library (PEP 784).
+    from compression import zstd
+else:
+    import zstandard as zstd
 from django.http import HttpResponse, StreamingHttpResponse
 from django.middleware.gzip import GZipMiddleware
 from django.test import RequestFactory, SimpleTestCase
