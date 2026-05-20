@@ -37,7 +37,9 @@ dependencies = [
     "brotli>=1.1.0 ; platform_python_implementation != 'PyPy'",
     "brotlipy>=0.7.0 ; platform_python_implementation == 'PyPy'",
     "django>=4.0",
-    "zstandard>=0.24.0",
+    # Python 3.14+ provides `compression.zstd` in the standard library (PEP 784),
+    # so the third-party package is only needed on older interpreters.
+    "zstandard>=0.24.0 ; python_version < '3.14'",
 ]
 
 [tool.setuptools_scm]
