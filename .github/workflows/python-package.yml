@@ -16,23 +16,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        django-version: ["4.1", "4.2", "5.0", "5.1", "5.2"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
+        django-version: ["4.1", "4.2", "5.0", "5.1", "5.2" , "6.0"]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+        uses: astral-sh/setup-uv@v8
       - name: Install the project
         run: |
-          uv sync --python ${{ matrix.python-version }} --all-extras --frozen --compile-bytecode --group dev --group tests
+          uv sync --python ${{ matrix.python-version }} --all-extras --frozen --group dev --group tests
           uv add "django==${{ matrix.django-version }}"
       - name: Lint with ruff
         run: |
-          uv run ruff check --no-fix --output-format full --target-version py39
+          uv run ruff check --no-fix --output-format full
       - name: Test with pytest
         run: |
           uv run pytest
