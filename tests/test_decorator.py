@@ -13,7 +13,7 @@ class CompressPageDecoratorTest(SimpleTestCase):
     sequence_unicode = ["a" * 500, "é" * 200, "a" * 300]
     request_factory = RequestFactory()
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.req = self.request_factory.get("/")
         self.req.META["HTTP_ACCEPT_ENCODING"] = "gzip, deflate, br"
         self.req.META[
@@ -28,19 +28,19 @@ class CompressPageDecoratorTest(SimpleTestCase):
         self.stream_resp_unicode = StreamingHttpResponse(self.sequence_unicode)
         self.stream_resp_unicode["Content-Type"] = "text/html; charset=UTF-8"
 
-    def test_small_page(self):
+    def test_small_page(self) -> None:
 
         @compress_page
-        def a_small_view(request):
+        def a_small_view(request):  # noqa: ARG001
             return HttpResponse()
 
         r = a_small_view(self.req)
         assert not r.has_header("Content-Encoding")
         assert r.content == b""
 
-    def test_normal_page(self):
+    def test_normal_page(self) -> None:
         @compress_page
-        def a_view(request):
+        def a_view(request):  # noqa: ARG001
             return self.resp
 
         r = a_view(self.req)
@@ -48,9 +48,9 @@ class CompressPageDecoratorTest(SimpleTestCase):
         assert r.get("Content-Length") == str(len(r.content))
         assert brotli.decompress(r.content), self.compressible_string
 
-    def test_streaming_page(self):
+    def test_streaming_page(self) -> None:
         @compress_page
-        def a_streaming_view(request):
+        def a_streaming_view(request):  # noqa: ARG001
             return self.stream_resp_unicode
 
         r = a_streaming_view(self.req)

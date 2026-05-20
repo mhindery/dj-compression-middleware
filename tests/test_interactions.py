@@ -36,7 +36,7 @@ class GZipMiddlewareTest(SimpleTestCase):
     sequence_unicode = ["a" * 500, "é" * 200, "a" * 300]
     request_factory = RequestFactory()
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.req = self.request_factory.get("/")
         self.req.META["HTTP_ACCEPT_ENCODING"] = "gzip, deflate"
         self.req.META[
@@ -61,17 +61,17 @@ class GZipMiddlewareTest(SimpleTestCase):
             f.read()  # must read the data before accessing the header
             return f.mtime
 
-    def test_compress_response(self):
+    def test_compress_response(self) -> None:
         """Compression is performed on responses with compressible content."""
         r = GZipMiddleware(self.get_response)(self.req)
         assert self.decompress(r.content) == self.compressible_string
         assert r.get("Content-Encoding") == "gzip"
         assert r.get("Content-Length") == str(len(r.content))
 
-    def test_compress_streaming_response(self):
+    def test_compress_streaming_response(self) -> None:
         """Compression is performed on responses with streaming content."""
 
-        def get_stream_response(request):
+        def get_stream_response(request):  # noqa: ARG001
             resp = StreamingHttpResponse(self.sequence)
             resp["Content-Type"] = "text/html; charset=UTF-8"
             return resp
@@ -81,10 +81,10 @@ class GZipMiddlewareTest(SimpleTestCase):
         assert r.get("Content-Encoding") == "gzip"
         assert not r.has_header("Content-Length")
 
-    def test_compress_streaming_response_unicode(self):
+    def test_compress_streaming_response_unicode(self) -> None:
         """Compression is performed on responses with streaming Unicode content."""
 
-        def get_stream_response_unicode(request):
+        def get_stream_response_unicode(request):  # noqa: ARG001
             resp = StreamingHttpResponse(self.sequence_unicode)
             resp["Content-Type"] = "text/html; charset=UTF-8"
             return resp
@@ -94,11 +94,11 @@ class GZipMiddlewareTest(SimpleTestCase):
         assert r.get("Content-Encoding") == "gzip"
         assert not r.has_header("Content-Length")
 
-    def test_compress_file_response(self):
+    def test_compress_file_response(self) -> None:
         """Compression is performed on FileResponse."""
         with open(__file__, "rb") as file1:  # noqa: PTH123
 
-            def get_response(req):
+            def get_response(req):  # noqa: ARG001
                 file_resp = FileResponse(file1)
                 file_resp["Content-Type"] = "text/html; charset=UTF-8"
                 return file_resp
@@ -109,35 +109,35 @@ class GZipMiddlewareTest(SimpleTestCase):
             assert r.get("Content-Encoding") == "gzip"
             assert r.file_to_stream is not file1
 
-    def test_compress_non_200_response(self):
+    def test_compress_non_200_response(self) -> None:
         """Compression is performed on responses with a status other than 200 (#10762)."""
         self.resp.status_code = 404
         r = GZipMiddleware(self.get_response)(self.req)
         assert self.decompress(r.content) == self.compressible_string
         assert r.get("Content-Encoding") == "gzip"
 
-    def test_no_compress_short_response(self):
+    def test_no_compress_short_response(self) -> None:
         """Compression isn't performed on responses with short content."""
         self.resp.content = self.short_string
         r = GZipMiddleware(self.get_response)(self.req)
         assert r.content == self.short_string
         assert r.get("Content-Encoding") is None
 
-    def test_no_compress_compressed_response(self):
+    def test_no_compress_compressed_response(self) -> None:
         """Compression isn't performed on responses that are already compressed."""
         self.resp["Content-Encoding"] = "deflate"
         r = GZipMiddleware(self.get_response)(self.req)
         assert r.content == self.compressible_string
         assert r.get("Content-Encoding") == "deflate"
 
-    def test_no_compress_incompressible_response(self):
+    def test_no_compress_incompressible_response(self) -> None:
         """Compression isn't performed on responses with incompressible content."""
         self.resp.content = self.incompressible_string
         r = GZipMiddleware(self.get_response)(self.req)
         assert r.content == self.incompressible_string
         assert r.get("Content-Encoding") is None
 
-    def test_compress_deterministic(self):
+    def test_compress_deterministic(self) -> None:
         """Compression results are the same for the same content and don't
         include a modification time (since that would make the results
         of compression non-deterministic and prevent
@@ -158,10 +158,10 @@ class ETagGZipMiddlewareTest(SimpleTestCase):
     rf = RequestFactory()
     compressible_string = b"a" * 500
 
-    def test_strong_etag_modified(self):
+    def test_strong_etag_modified(self) -> None:
         """GZipMiddleware makes a strong ETag weak."""
 
-        def get_response(req):
+        def get_response(req):  # noqa: ARG001
             response = HttpResponse(self.compressible_string)
             response["ETag"] = '"eggs"'
             return response
@@ -170,10 +170,10 @@ class ETagGZipMiddlewareTest(SimpleTestCase):
         gzip_response = GZipMiddleware(get_response)(request)
         assert gzip_response["ETag"] == 'W/"eggs"'
 
-    def test_weak_etag_not_modified(self):
+    def test_weak_etag_not_modified(self) -> None:
         """GZipMiddleware doesn't modify a weak ETag."""
 
-        def get_response(req):
+        def get_response(req):  # noqa: ARG001
             response = HttpResponse(self.compressible_string)
             response["ETag"] = 'W/"eggs"'
             return response
@@ -182,10 +182,10 @@ class ETagGZipMiddlewareTest(SimpleTestCase):
         gzip_response = GZipMiddleware(get_response)(request)
         assert gzip_response["ETag"] == 'W/"eggs"'
 
-    def test_etag_match(self):
+    def test_etag_match(self) -> None:
         """GZipMiddleware allows 304 Not Modified responses."""
 
-        def get_response(req):
+        def get_response(req):  # noqa: ARG001
             return HttpResponse(self.compressible_string)
 
         def get_cond_response(req):
@@ -194,8 +194,6 @@ class ETagGZipMiddlewareTest(SimpleTestCase):
         request = self.rf.get("/", HTTP_ACCEPT_ENCODING="gzip, deflate")
         response = GZipMiddleware(get_cond_response)(request)
         gzip_etag = response["ETag"]
-        next_request = self.rf.get(
-            "/", HTTP_ACCEPT_ENCODING="gzip, deflate", HTTP_IF_NONE_MATCH=gzip_etag
-        )
+        next_request = self.rf.get("/", HTTP_ACCEPT_ENCODING="gzip, deflate", HTTP_IF_NONE_MATCH=gzip_etag)
         next_response = ConditionalGetMiddleware(get_response)(next_request)
         assert next_response.status_code == 304

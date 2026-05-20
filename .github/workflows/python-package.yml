@@ -8,7 +8,6 @@ on:
     branches: ["master", "main"]
     tags: ["*"]
   pull_request:
-    branches: ["master", "main"]
 
 jobs:
   check-test:
@@ -16,23 +15,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        django-version: ["4.1", "4.2", "5.0", "5.1", "5.2"]
+        python-version: ["3.12", "3.13", "3.14", "3.15"]
+        django-version: ["5.1", "5.2" , "6.0"]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       - name: Install the project
         run: |
-          uv sync --python ${{ matrix.python-version }} --all-extras --frozen --compile-bytecode --group dev --group tests
+          uv sync --python ${{ matrix.python-version }} --all-extras --frozen --group dev --group tests
           uv add "django==${{ matrix.django-version }}"
       - name: Lint with ruff
         run: |
-          uv run ruff check --no-fix --output-format full --target-version py39
+          uv run ruff check --no-fix --output-format full
       - name: Test with pytest
         run: |
           uv run pytest
@@ -44,11 +40,8 @@ jobs:
       - check-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       - name: Set up Python "3.12"
         uses: actions/setup-python@v6
         with:
@@ -57,7 +50,7 @@ jobs:
         run: |
           uv build
       - name: Store the distribution packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-package-distributions
           path: dist/
@@ -77,7 +70,7 @@ jobs:
 
     steps:
       - name: Download all the dists
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: python-package-distributions
           path: dist/

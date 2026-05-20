@@ -36,7 +36,7 @@ MIN_IMPROVEMENT = 100
 
 
 # supported encodings in order of preference
-# (encoding, bulk_compressor, stream_compressor)
+# (encoding, bulk_compressor, stream_compressor)  # noqa: ERA001
 compressors = (
     ("zstd", zstd_compress, zstd_compress_stream),
     ("br", brotli_compress, brotli_compress_stream),
@@ -45,7 +45,7 @@ compressors = (
 
 
 def encoding_name(s):
-    """Obtain 'br' out of ' br;q=0.5' or similar."""
+    """Obtain 'br' out of ' br;q=0.5' or similar."""  # noqa: DOC201
     # We won't break if the ordering is specified with q=, but we ignore it.
     # Only a quality level of 0 is honoured -- in such a case we handle it as
     # if the encoding wasn't specified at all.
@@ -55,7 +55,7 @@ def encoding_name(s):
             _, q = q.split("=", 1)
             try:
                 q = float(q)
-                if q == 0.0:
+                if q == 0.0:  # noqa: RUF069
                     return None
             except ValueError:
                 pass
@@ -84,7 +84,7 @@ class CompressionMiddleware(MiddlewareMixin):
 
     max_random_bytes = 100
 
-    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:  # noqa: D102
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:  # noqa: C901, D102
         # It's not worth attempting to compress really short responses.
         if not response.streaming and len(response.content) < MIN_LEN:
             return response
