@@ -31,7 +31,7 @@ classifiers = [
 dependencies = [
     "brotli>=1.1.0 ; platform_python_implementation != 'PyPy'",
     "brotlipy>=0.7.0 ; platform_python_implementation == 'PyPy'",
-    "django>=4.0",
+    "django>=5.1",
     # Python 3.14+ provides `compression.zstd` in the standard library (PEP 784),
     # so the third-party package is only needed on older interpreters.
     "zstandard>=0.24.0 ; python_version < '3.14'",
@@ -81,6 +81,8 @@ ignore = [
     "CPY00",
     "D100",
     "D104",
+    "DOC201",
+    "COM812",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.

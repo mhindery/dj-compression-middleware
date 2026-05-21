@@ -1,38 +1,14 @@
 __all__ = ["CompressionMiddleware"]
 
 
-from django import VERSION as DJANGO_VERSION
+from collections.abc import Callable
+
 from django.http import HttpRequest, HttpResponse
 from django.middleware.gzip import compress_sequence as gzip_compress_stream, compress_string as gzip_compress
 from django.utils.cache import patch_vary_headers
 
 from .br import brotli_compress, brotli_compress_stream
 from .zstd import zstd_compress, zstd_compress_stream
-
-
-try:
-    from django.utils.deprecation import MiddlewareMixin
-except ImportError:  # pragma: no cover
-    MiddlewareMixin = object
-
-
-# Minimum response length before we'll consider compression. Small responses
-# won't necessarily be smaller after compression, and we want to save at least
-# enough to make the time expended worthwhile. Since MTUs around 1500 are
-# common, and HTTP headers are often more than 500 bytes (more so if there
-# are cookies), we guess that responses smaller than 500 bytes is likely to fit
-# in the MTU (or not) mostly due to other factors, not compression.
-MIN_LEN = 500
-
-# The compression has to reduce the length, otherwise we're just fooling
-# around. Since we'll have to add the Content-Encoding header, we need to
-# make that addition worthwhile, too. So the compressed response must be
-# smaller by some margin. This value should be at least 24 which is
-# len("Content-Encoding: gzip\r\n"), but a bigger value could reflect that a
-# non-trivial improvement in transfer time is required to make up for the time
-# required for decompression. An improvement of a few bytes is unlikely to
-# actually reduce the network communication in terms of MTUs.
-MIN_IMPROVEMENT = 100
 
 
 # supported encodings in order of preference
@@ -44,8 +20,11 @@ compressors = (
 )
 
 
-def encoding_name(s):
-    """Obtain 'br' out of ' br;q=0.5' or similar."""  # noqa: DOC201
+def extract_encoding_name(s):
+    """Return the encoding name from a string like 'br;q=0.5'.
+
+    If the quality level is 0, return None to indicate that the encoding is not acceptable.
+    """
     # We won't break if the ordering is specified with q=, but we ignore it.
     # Only a quality level of 0 is honoured -- in such a case we handle it as
     # if the encoding wasn't specified at all.
@@ -62,31 +41,37 @@ def encoding_name(s):
     return s.strip()
 
 
-def compressor(accept_encoding):
-    # We don't want to process extremely long headers. It might be an attack:
-    accept_encoding = accept_encoding[:200]
-    client_encodings = {encoding_name(e) for e in accept_encoding.split(",")}
-    if "*" in client_encodings:
-        # Our first choice:
-        return compressors[0]
-    for compressor in compressors:
-        if compressor[0] in client_encodings:
-            return compressor
-    return (None, None, None)
+class CompressionMiddleware:
+    """Middleware to compress the response content if the browser allows gzip, brotli or zstd compression."""
 
+    MAX_RANDOM_BYTES = 100
 
-class CompressionMiddleware(MiddlewareMixin):
-    """Compress content if the browser allows gzip, brotli or zstd compression.
+    # Minimum response length before we'll consider compression. Small responses
+    # won't necessarily be smaller after compression, and we want to save at least
+    # enough to make the time expended worthwhile. Since MTUs around 1500 are
+    # common, and HTTP headers are often more than 500 bytes (more so if there
+    # are cookies), we guess that responses smaller than 500 bytes is likely to fit
+    # in the MTU (or not) mostly due to other factors, not compression.
+    MIN_LEN = 500
 
-    Set the Vary header accordingly, so that caches will base their storage
-    on the Accept-Encoding header.
-    """
+    # The compression has to reduce the length, otherwise we're just fooling
+    # around. Since we'll have to add the Content-Encoding header, we need to
+    # make that addition worthwhile, too. So the compressed response must be
+    # smaller by some margin. This value should be at least 24 which is
+    # len("Content-Encoding: gzip\r\n"), but a bigger value could reflect that a
+    # non-trivial improvement in transfer time is required to make up for the time
+    # required for decompression. An improvement of a few bytes is unlikely to
+    # actually reduce the network communication in terms of MTUs.
+    MIN_IMPROVEMENT = 100
 
-    max_random_bytes = 100
+    def __init__(self, get_response):  # noqa: D107
+        self.get_response = get_response
 
-    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:  # noqa: C901, D102
+    def __call__(self, request: HttpRequest) -> HttpResponse:  # noqa: C901, D102
+        response = self.get_response(request)
+
         # It's not worth attempting to compress really short responses.
-        if not response.streaming and len(response.content) < MIN_LEN:
+        if not response.streaming and len(response.content) < self.MIN_LEN:
             return response
 
         # Avoid compression if we've already got a content-encoding.
@@ -95,15 +80,16 @@ class CompressionMiddleware(MiddlewareMixin):
 
         patch_vary_headers(response, ("Accept-Encoding",))
 
-        ae = request.META.get("HTTP_ACCEPT_ENCODING", "")
-        encoding, compress_string, compress_sequence = compressor(ae)
+        encoding, compress_string, compress_sequence = self.get_supported_compressor(
+            request.META.get("HTTP_ACCEPT_ENCODING", "")
+        )
         if encoding is None:
-            # No compression in common with client (the client probably didn't indicate support for anything).
+            # Client didn't indicate support for anything we can do, so just return the original response.
             return response
 
         compress_kwargs = {}
-        if encoding == "gzip" and DJANGO_VERSION >= (4, 2):
-            compress_kwargs["max_random_bytes"] = self.max_random_bytes
+        if encoding == "gzip":
+            compress_kwargs["max_random_bytes"] = self.MAX_RANDOM_BYTES
 
         if response.streaming:
             if getattr(response, "is_async", False):
@@ -122,7 +108,7 @@ class CompressionMiddleware(MiddlewareMixin):
         else:
             # Return the compressed content only if it's actually shorter.
             compressed_content = compress_string(response.content, **compress_kwargs)
-            if len(response.content) - len(compressed_content) < MIN_IMPROVEMENT:
+            if len(response.content) - len(compressed_content) < self.MIN_IMPROVEMENT:
                 return response
             response.content = compressed_content
             response.headers["Content-Length"] = str(len(response.content))
@@ -136,3 +122,26 @@ class CompressionMiddleware(MiddlewareMixin):
         response.headers["Content-Encoding"] = encoding
 
         return response
+
+    @classmethod
+    def get_supported_compressor(
+        cls, accept_encoding_header: str
+    ) -> tuple[str, Callable[..., bytes] | None, Callable[..., bytes] | None] | tuple[None, None, None]:
+        """Determine the best compressor to use based on the client's Accept-Encoding header.
+
+        Returns a tuple of (encoding_name, bulk_compressor, stream_compressor),
+        or (None, None, None) if no suitable compressor is found.
+        """
+        # We don't want to process extremely long headers. It might be an attack:
+        accept_encoding_header = accept_encoding_header[:200]
+        supported_client_encodings = {extract_encoding_name(e) for e in accept_encoding_header.split(",")}
+
+        # If everything is supported, just take the first one in our preference order.
+        if "*" in supported_client_encodings:
+            return compressors[0]
+
+        for encoding, compress_string, compress_sequence in compressors:
+            if encoding in supported_client_encodings:
+                return encoding, compress_string, compress_sequence
+
+        return (None, None, None)
