@@ -47,7 +47,7 @@
 #         self.resp.content = self.compressible_string
 #         self.resp["Content-Type"] = "text/html; charset=UTF-8"
 
-#     def get_response(self, request):  # noqa: ARG002
+#     def get_response(self, request):
 #         return self.resp
 
 #     @staticmethod
@@ -71,7 +71,7 @@
 #     def test_compress_streaming_response(self) -> None:
 #         """Compression is performed on responses with streaming content."""
 
-#         def get_stream_response(request):  # noqa: ARG001
+#         def get_stream_response(request):
 #             resp = StreamingHttpResponse(self.sequence)
 #             resp["Content-Type"] = "text/html; charset=UTF-8"
 #             return resp
@@ -84,7 +84,7 @@
 #     def test_compress_streaming_response_unicode(self) -> None:
 #         """Compression is performed on responses with streaming Unicode content."""
 
-#         def get_stream_response_unicode(request):  # noqa: ARG001
+#         def get_stream_response_unicode(request):
 #             resp = StreamingHttpResponse(self.sequence_unicode)
 #             resp["Content-Type"] = "text/html; charset=UTF-8"
 #             return resp
@@ -96,15 +96,15 @@
 
 #     def test_compress_file_response(self) -> None:
 #         """Compression is performed on FileResponse."""
-#         with open(__file__, "rb") as file1:  # noqa: PTH123
+#         with open(__file__, "rb") as file1:
 
-#             def get_response(req):  # noqa: ARG001
+#             def get_response(req):
 #                 file_resp = FileResponse(file1)
 #                 file_resp["Content-Type"] = "text/html; charset=UTF-8"
 #                 return file_resp
 
 #             r = GZipMiddleware(get_response)(self.req)
-#             with open(__file__, "rb") as file2:  # noqa: FURB101, PTH123
+#             with open(__file__, "rb") as file2:
 #                 assert self.decompress(b"".join(r)) == file2.read()
 #             assert r.get("Content-Encoding") == "gzip"
 #             assert r.file_to_stream is not file1
@@ -143,7 +143,7 @@
 #         of compression non-deterministic and prevent
 #         ConditionalGetMiddleware from recognizing conditional matches
 #         on gzipped content).
-#         """  # noqa: D205
+#         """
 #         r1 = GZipMiddleware(self.get_response)(self.req)
 #         r2 = GZipMiddleware(self.get_response)(self.req)
 #         assert r1.content == r2.content
@@ -161,7 +161,7 @@
 #     def test_strong_etag_modified(self) -> None:
 #         """GZipMiddleware makes a strong ETag weak."""
 
-#         def get_response(req):  # noqa: ARG001
+#         def get_response(req):
 #             response = HttpResponse(self.compressible_string)
 #             response["ETag"] = '"eggs"'
 #             return response
@@ -173,7 +173,7 @@
 #     def test_weak_etag_not_modified(self) -> None:
 #         """GZipMiddleware doesn't modify a weak ETag."""
 
-#         def get_response(req):  # noqa: ARG001
+#         def get_response(req):
 #             response = HttpResponse(self.compressible_string)
 #             response["ETag"] = 'W/"eggs"'
 #             return response
@@ -185,7 +185,7 @@
 #     def test_etag_match(self) -> None:
 #         """GZipMiddleware allows 304 Not Modified responses."""
 
-#         def get_response(req):  # noqa: ARG001
+#         def get_response(req):
 #             return HttpResponse(self.compressible_string)
 
 #         def get_cond_response(req):

@@ -31,7 +31,7 @@
 #     def test_small_page(self) -> None:
 
 #         @compress_page
-#         def a_small_view(request):  # noqa: ARG001
+#         def a_small_view(request):
 #             return HttpResponse()
 
 #         r = a_small_view(self.req)
@@ -40,7 +40,7 @@
 
 #     def test_normal_page(self) -> None:
 #         @compress_page
-#         def a_view(request):  # noqa: ARG001
+#         def a_view(request):
 #             return self.resp
 
 #         r = a_view(self.req)
@@ -50,7 +50,7 @@
 
 #     def test_streaming_page(self) -> None:
 #         @compress_page
-#         def a_streaming_view(request):  # noqa: ARG001
+#         def a_streaming_view(request):
 #             return self.stream_resp_unicode
 
 #         r = a_streaming_view(self.req)

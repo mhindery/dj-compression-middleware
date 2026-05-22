@@ -1,6 +1,7 @@
 __all__ = ["CompressionMiddleware"]
 
 
+import logging
 from collections.abc import Callable
 
 from django.http import HttpRequest, HttpResponse
@@ -11,24 +12,7 @@ from .br import brotli_compress, brotli_compress_stream
 from .zstd import zstd_compress, zstd_compress_stream
 
 
-def extract_encoding_name(specifier: str) -> str | None:
-    """Return the encoding name from a string like 'br;q=0.5' (which would return 'br).
-
-    If the quality level is 0, return None to indicate that the encoding is not acceptable.
-    """
-    # We won't break if the ordering is specified with q=, but we ignore it.
-    # Only a quality level of 0 is honoured -- in such a case we handle it as
-    # if the encoding wasn't specified at all.
-    if ";" in specifier:
-        specifier, quality_level = specifier.split(";", 1)
-        if "=" in quality_level:
-            _, quality_level = quality_level.split("=", 1)
-            try:
-                if float(quality_level) == 0.0:  # noqa: RUF069
-                    return None
-            except ValueError:
-                pass
-    return specifier.strip()
+logger = logging.getLogger(__name__)
 
 
 class CompressionMiddleware:
@@ -125,21 +109,48 @@ class CompressionMiddleware:
     def get_supported_compressor(
         cls, accept_encoding_header: str
     ) -> tuple[str, Callable[..., bytes] | None, Callable[..., bytes] | None] | tuple[None, None, None]:
-        """Determine the best compressor to use based on the client's Accept-Encoding header.
+        """Determine the best compressor to use based on the Accept-Encoding incoming request header.
 
-        Returns a tuple of (encoding_name, bulk_compressor, stream_compressor),
-        or (None, None, None) if no suitable compressor is found.
+        Returns a tuple of (encoding_name, bulk_compressor, stream_compressor), or (None, None, None) if no suitable compressor is found.
         """
+        # If everything is supported, just take the first one we prefer.
+        if accept_encoding_header == "*":
+            return cls.COMPRESSORS[0]
+
         # We don't want to process extremely long headers. It might be an attack:
         accept_encoding_header = accept_encoding_header[:200]
-        supported_client_encodings = {extract_encoding_name(e) for e in accept_encoding_header.split(",")}
-
-        # If everything is supported, just take the first one in our preference order.
-        if "*" in supported_client_encodings:
-            return cls.COMPRESSORS[0]
+        supported_client_encodings = {cls.extract_encoding_name(e) for e in accept_encoding_header.split(",")}
 
         for encoding, compress_string, compress_sequence in cls.COMPRESSORS:
             if encoding in supported_client_encodings:
                 return encoding, compress_string, compress_sequence
 
         return (None, None, None)
+
+    @classmethod
+    def extract_encoding_name(cls, specifier: str) -> str | None:
+        """Return the encoding name from a string like 'br;q=0.5' (which would return 'br).
+
+        If the quality level is 0, return None to indicate that the encoding is not acceptable.
+
+        If the extracted encoding name is unrecognized, return None to indicate that the encoding is not acceptable.
+        """
+        # We won't break if the ordering is specified with q=, but we ignore it.
+        # Only a quality level of 0 is honoured -- in such a case we handle it as
+        # if the encoding wasn't specified at all.
+        if ";" in specifier:
+            specifier, quality_level = specifier.split(";", 1)
+            if "=" in quality_level:
+                _, quality_level = quality_level.split("=", 1)
+                try:
+                    if float(quality_level) == 0.0:  # noqa: RUF069
+                        return None
+                except ValueError:
+                    pass
+        specifier = specifier.strip()
+
+        if specifier not in [encoding for encoding, _, _ in cls.COMPRESSORS]:
+            logger.warning("Unrecognized encoding: %s", specifier, extra={"specifier": specifier})
+            return None
+
+        return specifier

@@ -63,7 +63,7 @@ environments = [
 
 # ==== ruff ====
 [tool.ruff]
-line-length = 120
+line-length = 240
 indent-width = 4
 preview = false
 required-version = ">=0.15"

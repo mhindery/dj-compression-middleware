@@ -7,13 +7,11 @@
 # from io import BytesIO
 # from unittest import TestCase
 import pytest
+from django.middleware.gzip import compress_sequence as gzip_compress_stream, compress_string as gzip_compress
 
-from dj_compression_middleware.middleware import extract_encoding_name
-
+from dj_compression_middleware.br import brotli_compress, brotli_compress_stream
 
 # import brotli
-
-
 # if sys.version_info >= (3, 14):
 #     # Python 3.14+ ships zstd in the standard library (PEP 784).
 #     from compression import zstd
@@ -22,8 +20,9 @@ from dj_compression_middleware.middleware import extract_encoding_name
 # from django.http import HttpResponse, StreamingHttpResponse
 # from django.middleware.gzip import GZipMiddleware
 # from django.test import RequestFactory, SimpleTestCase
+from dj_compression_middleware.middleware import CompressionMiddleware
+from dj_compression_middleware.zstd import zstd_compress, zstd_compress_stream
 
-# from dj_compression_middleware.middleware import CompressionMiddleware, compressor
 
 # from .utils import UTF8_LOREM_IPSUM_IN_CZECH
 
@@ -56,7 +55,7 @@ from dj_compression_middleware.middleware import extract_encoding_name
 # class FakeResponse:
 #     streaming = False
 
-#     def __init__(self, content, headers=None, streaming=None) -> None:  # noqa: ANN001
+#     def __init__(self, content, headers=None, streaming=None) -> None:
 #         self.content = content.encode(encoding="utf-8")
 #         self.headers = headers or {}
 
@@ -72,7 +71,7 @@ from dj_compression_middleware.middleware import extract_encoding_name
 #     def __getitem__(self, header):
 #         return self.headers[header]
 
-#     def __setitem__(self, header, value) -> None:  # noqa: ANN001
+#     def __setitem__(self, header, value) -> None:
 #         self.headers[header] = value
 
 
@@ -242,36 +241,32 @@ from dj_compression_middleware.middleware import extract_encoding_name
 
 
 @pytest.mark.parametrize(
-    ("header", "expected"),
-    [
-        # ("", None),
-        # ("gzip", "gzip"),
-        # ("br", "br"),
-        # ("gzip, br", "br"),
-        ("br;q=1.0, gzip;q=0.8", "br")
-        # ("br;q=0, gzip;q=0.8", "gzip"),
-        # ("bla;bla;gzip", None),
-        # ("text/plain,*/*; charset=utf-8", None),  # PR #12
-        # ("gzip;q==1", "gzip"),  # questionable
-        # ("br;gzip", "br"),  # questionable
-        # ("*", "zstd"),
-    ],
+    ("specifier", "expected"),
+    [("", None), ("br", "br"), ("br;q=1.0", "br"), ("br;q=0.0", None), ("gzip", "gzip"), ("gzip;q=1.0", "gzip"), ("gzip;q=0.0", None), ("zstd", "zstd"), ("zstd;q=1.0", "zstd"), ("zstd;q=0.0", None), ("random", None), ("*", None)],
 )
-def test_extract_encoding_name(header, expected):
-    import ipdb
-
-    ipdb.set_trace()
-    extracted_encoding = extract_encoding_name(header)
+def test_extract_encoding_name(specifier, expected):
+    extracted_encoding = CompressionMiddleware.extract_encoding_name(specifier)
     assert extracted_encoding == expected
 
-    # assert extract_encoding_name("")[0] is None
-    # assert extract_encoding_name("gzip")[0] == "gzip"
-    # assert extract_encoding_name("br")[0] == "br"
-    # assert extract_encoding_name("gzip, br")[0] == "br"
-    # assert extract_encoding_name("br;q=1.0, gzip;q=0.8")[0] == "br"
-    # assert extract_encoding_name("br;q=0, gzip;q=0.8")[0] == "gzip"
-    # assert extract_encoding_name("bla;bla;gzip")[0] is None
-    # assert extract_encoding_name("text/plain,*/*; charset=utf-8")[0] is None  # PR #12
-    # assert extract_encoding_name("gzip;q==1")[0] == "gzip"  # questionable
-    # assert extract_encoding_name("br;gzip")[0] == "br"  # questionable
-    # assert extract_encoding_name("*")[0] == "zstd"
+
+@pytest.mark.parametrize(
+    ("accept_encoding_header", "expected"),
+    [
+        ("", (None, None, None)),
+        ("gzip", ("gzip", gzip_compress, gzip_compress_stream)),
+        ("br", ("br", brotli_compress, brotli_compress_stream)),
+        ("zstd", ("zstd", zstd_compress, zstd_compress_stream)),
+        ("gzip, br", ("br", brotli_compress, brotli_compress_stream)),
+        ("br;q=1.0, gzip;q=0.8", ("br", brotli_compress, brotli_compress_stream)),
+        ("br;q=0, gzip;q=0.8", ("gzip", gzip_compress, gzip_compress_stream)),
+        ("br;q=0, gzip;q=0", (None, None, None)),
+        ("bla;bla;gzip", (None, None, None)),
+        ("text/plain,*/*; charset=utf-8", (None, None, None)),
+        ("gzip;q==1", ("gzip", gzip_compress, gzip_compress_stream)),
+        ("br;gzip", ("br", brotli_compress, brotli_compress_stream)),
+        ("*", ("zstd", zstd_compress, zstd_compress_stream)),
+    ],
+)
+def test_get_supported_compressor(accept_encoding_header, expected):
+    result = CompressionMiddleware.get_supported_compressor(accept_encoding_header)
+    assert result == expected
