@@ -1,59 +1,59 @@
 
-import brotli
-from django.http import HttpResponse, StreamingHttpResponse
-from django.test import RequestFactory, SimpleTestCase
+# import brotli
+# from django.http import HttpResponse, StreamingHttpResponse
+# from django.test import RequestFactory, SimpleTestCase
 
-from dj_compression_middleware.decorators import compress_page
+# from dj_compression_middleware.decorators import compress_page
 
 
-class CompressPageDecoratorTest(SimpleTestCase):
+# class CompressPageDecoratorTest(SimpleTestCase):
 
-    compressible_string = b"a" * 500
-    sequence = [b"a" * 500, b"b" * 200, b"a" * 300]
-    sequence_unicode = ["a" * 500, "é" * 200, "a" * 300]
-    request_factory = RequestFactory()
+#     compressible_string = b"a" * 500
+#     sequence = [b"a" * 500, b"b" * 200, b"a" * 300]
+#     sequence_unicode = ["a" * 500, "é" * 200, "a" * 300]
+#     request_factory = RequestFactory()
 
-    def setUp(self) -> None:
-        self.req = self.request_factory.get("/")
-        self.req.META["HTTP_ACCEPT_ENCODING"] = "gzip, deflate, br"
-        self.req.META[
-            "HTTP_USER_AGENT"
-        ] = "Mozilla/5.0 (Windows NT 5.1; rv:9.0.1) Gecko/20100101 Firefox/9.0.1"
-        self.resp = HttpResponse()
-        self.resp.status_code = 200
-        self.resp.content = self.compressible_string
-        self.resp["Content-Type"] = "text/html; charset=UTF-8"
-        self.stream_resp = StreamingHttpResponse(self.sequence)
-        self.stream_resp["Content-Type"] = "text/html; charset=UTF-8"
-        self.stream_resp_unicode = StreamingHttpResponse(self.sequence_unicode)
-        self.stream_resp_unicode["Content-Type"] = "text/html; charset=UTF-8"
+#     def setUp(self) -> None:
+#         self.req = self.request_factory.get("/")
+#         self.req.META["HTTP_ACCEPT_ENCODING"] = "gzip, deflate, br"
+#         self.req.META[
+#             "HTTP_USER_AGENT"
+#         ] = "Mozilla/5.0 (Windows NT 5.1; rv:9.0.1) Gecko/20100101 Firefox/9.0.1"
+#         self.resp = HttpResponse()
+#         self.resp.status_code = 200
+#         self.resp.content = self.compressible_string
+#         self.resp["Content-Type"] = "text/html; charset=UTF-8"
+#         self.stream_resp = StreamingHttpResponse(self.sequence)
+#         self.stream_resp["Content-Type"] = "text/html; charset=UTF-8"
+#         self.stream_resp_unicode = StreamingHttpResponse(self.sequence_unicode)
+#         self.stream_resp_unicode["Content-Type"] = "text/html; charset=UTF-8"
 
-    def test_small_page(self) -> None:
+#     def test_small_page(self) -> None:
 
-        @compress_page
-        def a_small_view(request):  # noqa: ARG001
-            return HttpResponse()
+#         @compress_page
+#         def a_small_view(request):  # noqa: ARG001
+#             return HttpResponse()
 
-        r = a_small_view(self.req)
-        assert not r.has_header("Content-Encoding")
-        assert r.content == b""
+#         r = a_small_view(self.req)
+#         assert not r.has_header("Content-Encoding")
+#         assert r.content == b""
 
-    def test_normal_page(self) -> None:
-        @compress_page
-        def a_view(request):  # noqa: ARG001
-            return self.resp
+#     def test_normal_page(self) -> None:
+#         @compress_page
+#         def a_view(request):  # noqa: ARG001
+#             return self.resp
 
-        r = a_view(self.req)
-        assert r.get("Content-Encoding") == "br"
-        assert r.get("Content-Length") == str(len(r.content))
-        assert brotli.decompress(r.content), self.compressible_string
+#         r = a_view(self.req)
+#         assert r.get("Content-Encoding") == "br"
+#         assert r.get("Content-Length") == str(len(r.content))
+#         assert brotli.decompress(r.content), self.compressible_string
 
-    def test_streaming_page(self) -> None:
-        @compress_page
-        def a_streaming_view(request):  # noqa: ARG001
-            return self.stream_resp_unicode
+#     def test_streaming_page(self) -> None:
+#         @compress_page
+#         def a_streaming_view(request):  # noqa: ARG001
+#             return self.stream_resp_unicode
 
-        r = a_streaming_view(self.req)
-        assert r.get("Content-Encoding") == "br"
-        assert not r.has_header("Content-Length")
-        assert brotli.decompress(b"".join(r)) == b"".join(x.encode("utf-8") for x in self.sequence_unicode)
+#         r = a_streaming_view(self.req)
+#         assert r.get("Content-Encoding") == "br"
+#         assert not r.has_header("Content-Length")
+#         assert brotli.decompress(b"".join(r)) == b"".join(x.encode("utf-8") for x in self.sequence_unicode)

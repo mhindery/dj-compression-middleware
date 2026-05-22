@@ -248,7 +248,7 @@ wheels = [
 
 [[package]]
 name = "dj-compression-middleware"
-version = "0.0.2"
+version = "0.0.4"
 source = { editable = "." }
 dependencies = [
     { name = "brotli", marker = "(platform_python_implementation != 'PyPy' and sys_platform == 'darwin') or (platform_python_implementation != 'PyPy' and sys_platform == 'linux') or (platform_python_implementation != 'PyPy' and sys_platform == 'win32')" },
@@ -277,7 +277,7 @@ tests = [
 requires-dist = [
     { name = "brotli", marker = "platform_python_implementation != 'PyPy'", specifier = ">=1.1.0" },
     { name = "brotlipy", marker = "platform_python_implementation == 'PyPy'", specifier = ">=0.7.0" },
-    { name = "django", specifier = ">=4.0" },
+    { name = "django", specifier = ">=5.1" },
     { name = "zstandard", marker = "python_full_version < '3.14'", specifier = ">=0.24.0" },
 ]
 

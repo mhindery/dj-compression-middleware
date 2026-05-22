@@ -11,34 +11,24 @@ from .br import brotli_compress, brotli_compress_stream
 from .zstd import zstd_compress, zstd_compress_stream
 
 
-# supported encodings in order of preference
-# (encoding, bulk_compressor, stream_compressor)  # noqa: ERA001
-compressors = (
-    ("zstd", zstd_compress, zstd_compress_stream),
-    ("br", brotli_compress, brotli_compress_stream),
-    ("gzip", gzip_compress, gzip_compress_stream),
-)
-
-
-def extract_encoding_name(s):
-    """Return the encoding name from a string like 'br;q=0.5'.
+def extract_encoding_name(specifier: str) -> str | None:
+    """Return the encoding name from a string like 'br;q=0.5' (which would return 'br).
 
     If the quality level is 0, return None to indicate that the encoding is not acceptable.
     """
     # We won't break if the ordering is specified with q=, but we ignore it.
     # Only a quality level of 0 is honoured -- in such a case we handle it as
     # if the encoding wasn't specified at all.
-    if ";" in s:
-        s, q = s.split(";", 1)
-        if "=" in q:
-            _, q = q.split("=", 1)
+    if ";" in specifier:
+        specifier, quality_level = specifier.split(";", 1)
+        if "=" in quality_level:
+            _, quality_level = quality_level.split("=", 1)
             try:
-                q = float(q)
-                if q == 0.0:  # noqa: RUF069
+                if float(quality_level) == 0.0:  # noqa: RUF069
                     return None
             except ValueError:
                 pass
-    return s.strip()
+    return specifier.strip()
 
 
 class CompressionMiddleware:
@@ -63,6 +53,14 @@ class CompressionMiddleware:
     # required for decompression. An improvement of a few bytes is unlikely to
     # actually reduce the network communication in terms of MTUs.
     MIN_IMPROVEMENT = 100
+
+    # supported encodings in order of preference
+    # (encoding, bulk_compressor, stream_compressor)  # noqa: ERA001
+    COMPRESSORS = (
+        ("zstd", zstd_compress, zstd_compress_stream),
+        ("br", brotli_compress, brotli_compress_stream),
+        ("gzip", gzip_compress, gzip_compress_stream),
+    )
 
     def __init__(self, get_response):  # noqa: D107
         self.get_response = get_response
@@ -138,9 +136,9 @@ class CompressionMiddleware:
 
         # If everything is supported, just take the first one in our preference order.
         if "*" in supported_client_encodings:
-            return compressors[0]
+            return cls.COMPRESSORS[0]
 
-        for encoding, compress_string, compress_sequence in compressors:
+        for encoding, compress_string, compress_sequence in cls.COMPRESSORS:
             if encoding in supported_client_encodings:
                 return encoding, compress_string, compress_sequence
 

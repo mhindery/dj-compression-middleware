@@ -12,14 +12,14 @@ from brotli import Compressor, compress
 DEFAULT_LEVEL = 4
 
 
-def brotli_compress(content):  # noqa: D103
-    return compress(content, quality=DEFAULT_LEVEL)
+def brotli_compress(content, quality=DEFAULT_LEVEL):  # noqa: D103
+    return compress(content, quality=quality)
 
 
-def brotli_compress_stream(sequence):  # noqa: D103
+def brotli_compress_stream(sequence, quality=DEFAULT_LEVEL):  # noqa: D103
     yield b""
 
-    compressor = Compressor(quality=DEFAULT_LEVEL)
+    compressor = Compressor(quality=quality)
     try:
         # Brotli bindings
         process = compressor.process

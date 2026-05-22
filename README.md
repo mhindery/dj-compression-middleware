@@ -1,8 +1,7 @@
 # Dj Compression Middleware
 
 
-*Note: This repo is a fork of the project [django-compression-middleware](https://github.com/friedelwolff/django-compression-middleware). As the project did not seem maintained anymore, I forked the project in order
-to get some open PR's and issues resolved. Most of the credit goes to the original creator: Friedel Wolff.*
+*Note: This project and repo was originally a fork of the project [django-compression-middleware](https://github.com/friedelwolff/django-compression-middleware). As the project did not seem maintained anymore, I forked the project in order to get some open PR's and issues resolved. Credit goes to the original creator: Friedel Wolff. In the meantime I have refactored a lot of the code.*
 
 
 This middleware implements compressed content encoding for HTTP. It is similar
