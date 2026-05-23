@@ -13,7 +13,7 @@ if sys.version_info >= (3, 14):
     # Python 3.14+ ships zstd in the standard library (PEP 784).
     from compression import zstd
 else:
-    import zstandard as zstd
+    import zstandard as zstd  # ty:ignore[unresolved-import, unused-ignore-comment]
 
 
 from dj_compression_middleware.middleware import CompressionMiddleware

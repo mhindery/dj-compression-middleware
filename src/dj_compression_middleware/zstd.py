@@ -18,7 +18,7 @@ _HAS_STDLIB_ZSTD = sys.version_info >= (3, 14)
 if _HAS_STDLIB_ZSTD:
     from compression.zstd import ZstdCompressor, compress
 else:
-    import zstandard as zstd
+    import zstandard as zstd  # ty:ignore[unresolved-import, unused-ignore-comment]
     from django.utils.text import StreamingBuffer
 
 
