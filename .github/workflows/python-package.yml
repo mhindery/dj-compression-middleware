@@ -65,8 +65,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-          with:
-            enable-cache: "false"
+        with:
+          enable-cache: "false"
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v4.5.0
       - name: Determine Version
