@@ -20,6 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: "false"
       - name: Install the project
         run: |
           uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups
@@ -40,6 +42,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: "false"
       - name: Install the project
         run: |
           uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups
@@ -61,6 +65,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+          with:
+            enable-cache: "false"
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v4.5.0
       - name: Determine Version
@@ -96,7 +102,7 @@ jobs:
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     needs:
       - build
     runs-on: ubuntu-slim
@@ -109,6 +115,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: "false"
       - name: Download the distribution package
         uses: actions/download-artifact@v7
         with:
