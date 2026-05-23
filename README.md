@@ -1,25 +1,21 @@
+![PyPI - Version](https://img.shields.io/pypi/v/dj-compression-middleware)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dj-compression-middleware)
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fmhindery%2Fdj-compression-middleware%2Frefs%2Fheads%2Fmaster%2Fpyproject.toml)
+![PyPI - Versions from Framework Classifiers](https://img.shields.io/pypi/frameworkversions/django/dj-compression-middleware)
+
+
+
 # Dj Compression Middleware
 
 
 *Note: This project and repo was originally a fork of the project [django-compression-middleware](https://github.com/friedelwolff/django-compression-middleware). As the project did not seem maintained anymore, I forked the project in order to get some open PR's and issues resolved. Credit goes to the original creator: Friedel Wolff. In the meantime I have refactored a lot of the code.*
 
 
-This middleware implements compressed content encoding for HTTP. It is similar
-to Django's ``GZipMiddleware`` but additionally supports
-other compression methods. It is meant to be a drop-in replacement for Django's
-``GZipMiddleware``. Its documentation — including security warnings — therefore
-apply here as well.
+This package provides Django middleware to compress responses with gzip, brotli, or zstd. It is a replacement of Django's built-in GZipMiddleware but support more compression algorithms. Both normal and streaming responses get compressed.
 
-The middleware is focussed on the task of compressing typical Django responses
-such as HTML, JSON, etc.  Both normal (bulk) and streaming responses are
-supported. For static file compression, have a look at other projects such as
-`WhiteNoise`_.
+Compression of responses happens at runtime, if you are looking to compress your static assets, look at e.g. [Django-compressor](https://github.com/django-compressor/django-compressor), [WhiteNoise](https://whitenoise.readthedocs.io/en/stable/django.html#django-compressor).
 
-Zstandard is a new method for compression with little client support so far.
-Most browsers now support Brotli compression (check support status on `Can I
-use... Brotli`_). The middleware will choose the best compression method
-supported by the client as indicated in the request's ``Accept-Encoding``
-header. In order of preference:
+The middleware looks at a requests' ``Accept-Encoding`` header in order to select appropriate compression. It will choose one using this order of preference:
 
 - Zstandard (zstd)
 - Brotli (br)
