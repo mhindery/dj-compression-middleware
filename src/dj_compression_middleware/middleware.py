@@ -76,18 +76,18 @@ class CompressionMiddleware:
                 # forward args explicitly to capture fixed references in case they are set again later.
                 async def compress_wrapper(streaming_content, **compress_kwargs):
                     async for chunk in streaming_content:
-                        yield compress_string(chunk, **compress_kwargs)
+                        yield compress_string(chunk, **compress_kwargs)  # ty:ignore[call-non-callable]
 
                 response.streaming_content = compress_wrapper(response.streaming_content, **compress_kwargs)
             else:
-                response.streaming_content = compress_sequence(response.streaming_content, **compress_kwargs)
+                response.streaming_content = compress_sequence(response.streaming_content, **compress_kwargs)  # ty:ignore[call-non-callable]
 
             # Delete the `Content-Length` header for streaming content, because
             # we won't know the compressed size until we stream it.
             del response.headers["Content-Length"]
         else:
             # Return the compressed content only if it's actually shorter.
-            compressed_content = compress_string(response.content, **compress_kwargs)
+            compressed_content = compress_string(response.content, **compress_kwargs)  # ty:ignore[call-non-callable]
             if len(response.content) - len(compressed_content) < self.MIN_IMPROVEMENT:
                 return response
             response.content = compressed_content
