@@ -1,8 +1,7 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/dj-compression-middleware)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dj-compression-middleware)
-![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fmhindery%2Fdj-compression-middleware%2Frefs%2Fheads%2Fmaster%2Fpyproject.toml)
 ![PyPI - Versions from Framework Classifiers](https://img.shields.io/pypi/frameworkversions/django/dj-compression-middleware)
-
+![PyPI - License](https://img.shields.io/pypi/l/dj-compression-middleware)
 
 
 # Dj Compression Middleware
@@ -21,16 +20,9 @@ The middleware looks at a requests' ``Accept-Encoding`` header in order to selec
 - Brotli (br)
 - gzip (gzip)
 
-Installation and usage
-----------------------
+## Installation and usage
 
-The following requirements are supported and tested in all reasonable
-combinations:
-
-- Python versions: 3.10–3.14
-- Django versions: 4.0–5.2
-
-Add the package to your project, e.g.
+Install the package:
 
 ```shell
 uv add dj-compression-middleware
@@ -38,9 +30,7 @@ uv add dj-compression-middleware
 pip install dj-compression-middleware
 ```
 
-To apply compression to all the views served by Django, add
-``dj_compression_middleware.middleware.CompressionMiddleware`` to the
-``MIDDLEWARE`` setting:
+In your Django settings, add ``dj_compression_middleware.middleware.CompressionMiddleware`` to the ``MIDDLEWARE``:
 
 
 ```python
@@ -51,51 +41,20 @@ MIDDLEWARE = [
 ]
 ```
 
-Remove ``GZipMiddleware`` and ``BrotliMiddleware`` if you used it before.
-Consult the Django documentation on the correct [ordering of middleware](https://docs.djangoproject.com/en/dev/ref/middleware/#middleware-ordering)
+Remove ``GZipMiddleware`` and ``BrotliMiddleware`` if they were present, as this middleware replaces them.
 
-Alternatively you can decorate views individually to serve them with
-compression:
+### Excluding views from compression
+
+When you want to disable compression for a single view, it can be done like this for either a function-based or class-based view:
 
 ```python
-from dj_compression_middleware.decorators import compress_page
+from dj_compression_middleware import no_compress, NoCompressMixin
 
-@compress_page
+@no_compress
 def index_view(request):
     ...
+
+
+class MyView(NoCompressMixin, View):
+    ...
 ```
-
-Note that your browser might not send the ``br`` entry in the ``Accept-Encoding``
-header when you test without HTTPS (common on localhost). You can force it to
-send the header, though. In Firefox, visit ``about:config`` and set
-``network.http.accept-encoding`` to indicate support. Note that you might
-encounter some problems on the web with such a setting (which is why Brotli is
-only supported on secure connections by default).
-
-Credits and Resources
----------------------
-
-The code and tests in this project are based on Django's ``GZipMiddleware`` and
-Vašek Dohnal's ``django-brotli``. For compression, it uses the following modules
-to bind to fast C modules:
-
-- The `zstandard` bindings. It supports both a C module (for CPython) and CFFI
-  which should be appropriate for PyPy. See the documentation for full details.
-- The `Brotli` bindings or `brotlipy`. The latter is preferred on PyPy since
-  it is implemented using cffi. But both should work on both Python
-  implementations.
-- Python's builtin `gzip` module.
-
-Contributing
-------------
-
-1. Clone this repository
-2. Setup an environment using uv: ``uv sync --python-preference only-managed --python 3.12 --frozen --compile-bytecode --all-extras --group dev --group tests --group pages``
-3. Change some code
-4. Run the tests: in the project root simply execute ``uv run pytest``
-5. Submit a pull request and check for any errors reported by the Continuous Integration service.
-
-License
--------
-
-The MPL 2.0 License
