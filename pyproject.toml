@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.11"]
+requires = ["uv_build>=0.11,<0.12"]
 build-backend = "uv_build"
 
 [project]
@@ -17,7 +17,6 @@ classifiers = [
     'Framework :: Django :: 5.2',
     'Framework :: Django :: 6.0',
     'Intended Audience :: Developers',
-    'License :: OSI Approved :: MIT License',
     'Natural Language :: English',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3',
@@ -62,7 +61,7 @@ environments = [
 
 # ==== ruff ====
 [tool.ruff]
-line-length = 240
+line-length = 120
 indent-width = 4
 preview = false
 required-version = ">=0.15"
@@ -81,15 +80,11 @@ ignore = [
     "D100",
     "D104",
     "DOC201",
-    "COM812",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = ["T201"]
-
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
 preview = false
@@ -100,10 +95,6 @@ docstring-code-format = true
 docstring-code-line-length = "dynamic"
 exclude = ["*.pyi", "**/migrations/*.py"]
 
-# Like Black, respect magic trailing commas.
-skip-magic-trailing-comma = true
-
-# 4. Ignore `E402` (import violations) in all `__init__.py` files, and in select subdirectories.
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
     "RUF06",
@@ -127,7 +118,6 @@ convention = "google"
 
 [tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true
-ignore-fully-untyped = true     # allows for gradual typing
 suppress-none-returning = false
 
 [tool.ruff.lint.flake8-unused-arguments]
@@ -143,13 +133,10 @@ known-local-folder = ["src"]
 lines-after-imports = 2
 
 # ==== pytest ====
-[tool.pytest_env]
-ENVIRONMENT = "test"
-
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-s --durations=5 -v --import-mode=importlib --cov --cov-report=term --cov-report=html --cov-report=xml --junit-xml=junit.xml"
-python_files = ["tests/tests.py", "tests/test_*.py"]
+python_files = ["tests/test_*.py"]
 
 junit_family = 'xunit2'
 junit_suite_name = "test_suite"
@@ -157,10 +144,6 @@ junit_logging = 'all'
 junit_log_passing_tests = true
 junit_duration_report = "call"
 
-filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-]
 
 # ==== Coverage ====
 [tool.coverage.run]

@@ -3,10 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-__all__ = ["zstd_compress", "zstd_compress_stream"]
-
-
 import sys
+from collections.abc import Iterable
 
 
 DEFAULT_LEVEL = 7
@@ -22,14 +20,14 @@ else:
     from django.utils.text import StreamingBuffer
 
 
-def zstd_compress(content, level=DEFAULT_LEVEL):  # noqa: D103
+def zstd_compress(content: bytes, level: int = DEFAULT_LEVEL) -> bytes:  # noqa: D103
     if _HAS_STDLIB_ZSTD:
         return compress(content, level=level)
 
     return zstd.ZstdCompressor(level=level).compress(content)
 
 
-def zstd_compress_stream(sequence, level=DEFAULT_LEVEL):  # noqa: D103
+def zstd_compress_stream(sequence: Iterable[bytes], level: int = DEFAULT_LEVEL) -> Iterable[bytes]:  # noqa: D103
     if _HAS_STDLIB_ZSTD:
         compressor = ZstdCompressor(level=level)
         for item in sequence:

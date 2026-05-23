@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["cpython@3.12", "cpython@3.13", "cpython@3.14", "cpython@3.14t", "cpython@3.15", "cpython@3.15t"]
-        django-version: ["5.1", "5.2" , "6.0"]
+        django-version: ["django==5.1", "django==5.2" , "django==6.0", "django==6.1a1", "django @ git+https://github.com/django/django"]
 
     steps:
       - uses: actions/checkout@v6
@@ -24,8 +24,8 @@ jobs:
           enable-cache: "false"
       - name: Install the project
         run: |
-          uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups
-          uv add "django==${{ matrix.django-version }}"
+          uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups --no-install-package django
+          uv add "${{ matrix.django-version }}"
       - name: Lint with ruff
         run: uv run ruff check --no-fix
       - name: Lint with ty
@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["cpython@3.12", "cpython@3.13", "cpython@3.14", "cpython@3.14t", "cpython@3.15", "cpython@3.15t"]
-        django-version: ["5.1", "5.2" , "6.0"]
+        django-version: ["django==5.1", "django==5.2" , "django==6.0", "django==6.1a1", "django @ git+https://github.com/django/django"]
 
     steps:
       - uses: actions/checkout@v6
@@ -46,8 +46,8 @@ jobs:
           enable-cache: "false"
       - name: Install the project
         run: |
-          uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups
-          uv add "django==${{ matrix.django-version }}"
+          uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups --no-install-package django
+          uv add "${{ matrix.django-version }}"
       - name: Test with pytest
         env:
           PYTEST_ADDOPTS: "--color=yes"
@@ -77,7 +77,7 @@ jobs:
             mode: MainLine
       - name: Build the package
         run: |
-          if [[ "$GitVersion_BranchName" == "main" ]]; then
+          if [[ "$GitVersion_BranchName" == "master" ]]; then
             python_package_version="$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch"
           else
             python_package_version="$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch.dev+$GitVersion_BranchName.$GitVersion_CommitsSinceVersionSource.$GitVersion_ShortSha"
@@ -92,7 +92,7 @@ jobs:
           path: dist/
       - name: Create Tag
         run: |
-          if [[ "$GitVersion_BranchName" == "main" ]]; then
+          if [[ "$GitVersion_BranchName" == "master" ]]; then
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             git tag -a "$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch" -m "Release $GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch"

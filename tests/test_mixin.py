@@ -1,8 +1,7 @@
 from django.http import HttpRequest, HttpResponse
 from django.views import View
 
-from dj_compression_middleware.middleware import CompressionMiddleware
-from dj_compression_middleware.mixin import NoCompressMixin
+from dj_compression_middleware import CompressionMiddleware, NoCompressMixin
 
 from .utils import UTF8_LOREM_IPSUM_IN_CZECH
 
