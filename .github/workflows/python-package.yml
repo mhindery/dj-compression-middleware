@@ -4,10 +4,9 @@
 name: Python package
 
 on:
-  push:
-    branches: ["master", "main"]
-    tags: ["*"]
-  pull_request:
+  push: {}
+
+  workflow_dispatch: {}
 
 jobs:
   static-analysis:
