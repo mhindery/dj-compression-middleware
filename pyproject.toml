@@ -62,7 +62,7 @@ environments = [
 
 # ==== ruff ====
 [tool.ruff]
-line-length = 240
+line-length = 120
 indent-width = 4
 preview = false
 required-version = ">=0.15"
@@ -81,15 +81,11 @@ ignore = [
     "D100",
     "D104",
     "DOC201",
-    "COM812",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = ["T201"]
-
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
 preview = false
@@ -100,10 +96,6 @@ docstring-code-format = true
 docstring-code-line-length = "dynamic"
 exclude = ["*.pyi", "**/migrations/*.py"]
 
-# Like Black, respect magic trailing commas.
-skip-magic-trailing-comma = true
-
-# 4. Ignore `E402` (import violations) in all `__init__.py` files, and in select subdirectories.
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
     "RUF06",
