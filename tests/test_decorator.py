@@ -1,5 +1,4 @@
 from django.http import HttpRequest, HttpResponse
-from django.views import View
 
 from dj_compression_middleware.decorator import no_compress
 from dj_compression_middleware.middleware import CompressionMiddleware

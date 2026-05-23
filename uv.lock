@@ -287,7 +287,7 @@ dev = [
     { name = "ipdb", specifier = ">=0.13.13" },
     { name = "ipython", specifier = ">=8.18.1" },
     { name = "ruff", specifier = ">=0.15.13" },
-    { name = "ty", specifier = ">=0.0.21" },
+    { name = "ty", specifier = ">=0.0.39" },
 ]
 tests = [
     { name = "coverage", specifier = ">=7.14.0" },
