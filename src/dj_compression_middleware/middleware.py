@@ -1,6 +1,3 @@
-__all__ = ["CompressionMiddleware"]
-
-
 import logging
 from collections.abc import Callable
 
@@ -51,6 +48,9 @@ class CompressionMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpResponse:  # noqa: C901, D102
         response = self.get_response(request)
+
+        if getattr(response, "no_compress", False):
+            return response
 
         # It's not worth attempting to compress really short responses.
         if not response.streaming and len(response.content) < self.MIN_LEN:
