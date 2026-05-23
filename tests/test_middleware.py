@@ -22,7 +22,6 @@ from dj_compression_middleware.zstd import zstd_compress, zstd_compress_stream
 from .utils import UTF8_LOREM_IPSUM_IN_CZECH
 
 
-# class MiddlewareTestCase(TestCase):
 def test_middleware_compress_response_brotli() -> None:
     fake_request = HttpRequest()
     fake_request.META["HTTP_ACCEPT_ENCODING"] = "br"

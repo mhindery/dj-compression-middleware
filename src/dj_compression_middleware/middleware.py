@@ -49,7 +49,7 @@ class CompressionMiddleware:
     def __call__(self, request: HttpRequest) -> HttpResponse:  # noqa: C901, D102
         response = self.get_response(request)
 
-        if getattr(response, "no_compress", False):
+        if getattr(response, "no_compress", False) or getattr(self.get_response, "no_compress", False):
             return response
 
         # It's not worth attempting to compress really short responses.
