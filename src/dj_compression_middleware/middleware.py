@@ -62,9 +62,7 @@ class CompressionMiddleware:
 
         patch_vary_headers(response, ("Accept-Encoding",))
 
-        encoding, compress_string, compress_sequence = self.get_supported_compressor(
-            request.META.get("HTTP_ACCEPT_ENCODING", "")
-        )
+        encoding, compress_string, compress_sequence = self.get_supported_compressor(request.headers.get("Accept-Encoding", ""))
         if encoding is None:
             # Client didn't indicate support for anything we can do, so just return the original response.
             return response
@@ -101,6 +99,7 @@ class CompressionMiddleware:
         etag = response.headers.get("ETag")
         if etag and etag.startswith('"'):
             response.headers["ETag"] = "W/" + etag
+
         response.headers["Content-Encoding"] = encoding
 
         return response
