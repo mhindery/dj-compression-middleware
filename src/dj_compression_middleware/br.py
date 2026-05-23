@@ -1,10 +1,4 @@
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-__all__ = ["brotli_compress", "brotli_compress_stream"]
-
+from collections.abc import Iterable
 
 from brotli import Compressor, compress
 
@@ -12,11 +6,11 @@ from brotli import Compressor, compress
 DEFAULT_LEVEL = 4
 
 
-def brotli_compress(content, quality=DEFAULT_LEVEL):  # noqa: D103
+def brotli_compress(content: bytes, quality: int = DEFAULT_LEVEL) -> bytes:  # noqa: D103
     return compress(content, quality=quality)
 
 
-def brotli_compress_stream(sequence, quality=DEFAULT_LEVEL):  # noqa: D103
+def brotli_compress_stream(sequence: Iterable[bytes], quality: int = DEFAULT_LEVEL) -> Iterable[bytes]:  # noqa: D103
     yield b""
 
     compressor = Compressor(quality=quality)

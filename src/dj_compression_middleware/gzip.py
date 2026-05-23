@@ -1,4 +1,5 @@
 import gzip
+from collections.abc import Iterable
 from gzip import GzipFile, compress as gzip_compress
 
 from django.utils.text import StreamingBuffer, _get_random_filename  # noqa: PLC2701
@@ -9,8 +10,12 @@ from django.utils.text import StreamingBuffer, _get_random_filename  # noqa: PLC
 # Django's built-in functions do not take a configurable compression level and use 6 hardcoded.
 
 
-def compress_string(s, compresslevel=6, max_random_bytes=None):  # noqa: D103
-    compressed_data = gzip_compress(s, compresslevel=compresslevel, mtime=0)
+def compress_string(  # noqa: D103
+    s: str | bytes,
+    compresslevel: int = 6,
+    max_random_bytes: int | None = None,
+) -> bytes:
+    compressed_data = gzip_compress(s, compresslevel=compresslevel, mtime=0)  # ty:ignore[invalid-argument-type]
 
     if not max_random_bytes:
         return compressed_data
@@ -24,7 +29,11 @@ def compress_string(s, compresslevel=6, max_random_bytes=None):  # noqa: D103
     return bytes(header) + filename + compressed_view[10:]
 
 
-def compress_sequence(sequence, compresslevel=6, max_random_bytes=None):  # noqa: D103
+def compress_sequence(  # noqa: D103
+    sequence: Iterable[bytes],
+    compresslevel: int = 6,
+    max_random_bytes: int | None = None,
+) -> Iterable[bytes]:
     buf = StreamingBuffer()
     filename = _get_random_filename(max_random_bytes) if max_random_bytes else None
     with GzipFile(filename=filename, mode="wb", compresslevel=compresslevel, fileobj=buf, mtime=0) as zfile:

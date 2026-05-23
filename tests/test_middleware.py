@@ -184,8 +184,8 @@ def test_middleware_compress_streaming_unicode_response_brotli() -> None:
         ("*", None),
     ],
 )
-def test_extract_encoding_name(specifier, expected):
-    extracted_encoding = CompressionMiddleware(lambda _: None).extract_encoding_name(specifier)
+def test_extract_encoding_name(specifier: str, expected: str | None) -> None:
+    extracted_encoding = CompressionMiddleware(lambda _: None).extract_encoding_name(specifier)  # ty:ignore[invalid-argument-type]
     assert extracted_encoding == expected
 
 
@@ -207,8 +207,8 @@ def test_extract_encoding_name(specifier, expected):
         ("*", "zstd"),
     ],
 )
-def test_get_supported_compressor(accept_encoding_header, expected):
-    result = CompressionMiddleware(lambda _: None).get_supported_compressor(accept_encoding_header)
+def test_get_supported_compressor(accept_encoding_header: str, expected: str | None) -> None:
+    result = CompressionMiddleware(lambda _: None).get_supported_compressor(accept_encoding_header)  # ty:ignore[invalid-argument-type]
     assert result[0] == expected
 
 

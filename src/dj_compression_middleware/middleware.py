@@ -1,8 +1,8 @@
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from functools import partial
 
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from django.utils.cache import patch_vary_headers
 
 from .br import brotli_compress, brotli_compress_stream
@@ -36,9 +36,9 @@ class CompressionMiddleware:
     BROTLI_QUALITY = 4
     GZIP_COMPRESSLEVEL = 6
 
-    COMPRESSORS: tuple[tuple[str, Callable[..., bytes], Callable[..., bytes]], ...]
+    COMPRESSORS: tuple[tuple[str, Callable[[bytes], bytes], Callable[[Iterable[bytes]], Iterable[bytes]]], ...]
 
-    def __init__(self, get_response):  # noqa: D107
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse | StreamingHttpResponse]) -> None:  # noqa: D107
         self.get_response = get_response
 
         # supported encodings in order of preference
@@ -81,7 +81,7 @@ class CompressionMiddleware:
             ),
         )
 
-    def __call__(self, request: HttpRequest) -> HttpResponse:  # noqa: C901, D102
+    def __call__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # noqa: C901, D102
         response = self.get_response(request)
 
         if getattr(response, "no_compress", False) or getattr(self.get_response, "no_compress", False):
@@ -107,13 +107,13 @@ class CompressionMiddleware:
         if response.streaming:
             if getattr(response, "is_async", False):
                 # forward args explicitly to capture fixed references in case they are set again later.
-                async def compress_wrapper(streaming_content):
-                    async for chunk in streaming_content:
+                async def compress_wrapper(streaming_content: Iterable[bytes]) -> Iterable[bytes]:  # ty:ignore[invalid-return-type]
+                    async for chunk in streaming_content:  # ty:ignore[not-iterable]
                         yield compress_string(chunk)  # ty:ignore[call-non-callable]
 
-                response.streaming_content = compress_wrapper(response.streaming_content)
+                response.streaming_content = compress_wrapper(response.streaming_content)  # ty:ignore[invalid-assignment, unresolved-attribute]
             else:
-                response.streaming_content = compress_sequence(response.streaming_content)  # ty:ignore[call-non-callable]
+                response.streaming_content = compress_sequence(response.streaming_content)  # ty:ignore[call-non-callable, invalid-assignment, unresolved-attribute]
 
             # Delete the `Content-Length` header for streaming content, because
             # we won't know the compressed size until we stream it.
@@ -123,7 +123,7 @@ class CompressionMiddleware:
             compressed_content = compress_string(response.content)  # ty:ignore[call-non-callable]
             if len(response.content) - len(compressed_content) < self.MIN_IMPROVEMENT:
                 return response
-            response.content = compressed_content
+            response.content = compressed_content  # ty:ignore[invalid-assignment]
             response.headers["Content-Length"] = str(len(response.content))
 
         # If there is a strong ETag, make it weak to fulfill the requirements
@@ -140,7 +140,10 @@ class CompressionMiddleware:
     def get_supported_compressor(
         self,
         accept_encoding_header: str,
-    ) -> tuple[str, Callable[..., bytes] | None, Callable[..., bytes] | None] | tuple[None, None, None]:
+    ) -> (
+        tuple[str, Callable[[bytes], bytes] | None, Callable[[Iterable[bytes]], Iterable[bytes]] | None]
+        | tuple[None, None, None]
+    ):
         """Determine the best compressor to use based on the Accept-Encoding incoming request header.
 
         Returns a tuple of (encoding_name, bulk_compressor, stream_compressor).
