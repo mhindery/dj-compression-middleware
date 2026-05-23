@@ -4,64 +4,102 @@
 name: Python package
 
 on:
-  push:
-    branches: ["master", "main"]
-    tags: ["*"]
-  pull_request:
+  push: {}
+
+  workflow_dispatch: {}
 
 jobs:
-  check-test:
-    runs-on: ubuntu-latest
+  static-analysis:
+    runs-on: ubuntu-slim
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13", "3.14", "3.15"]
+        python-version: ["cpython@3.12", "cpython@3.13", "cpython@3.14", "cpython@3.14t", "cpython@3.15", "cpython@3.15t"]
         django-version: ["5.1", "5.2" , "6.0"]
 
     steps:
       - uses: actions/checkout@v6
-      - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       - name: Install the project
         run: |
-          uv sync --python ${{ matrix.python-version }} --all-extras --frozen --group dev --group tests
+          uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups
           uv add "django==${{ matrix.django-version }}"
       - name: Lint with ruff
-        run: |
-          uv run ruff check --no-fix --output-format full
-      - name: Test with pytest
-        run: |
-          uv run pytest
+        run: uv run ruff check --no-fix
+      - name: Lint with ty
+        run: uv run ty check
 
-  build:
-    name: >-
-      Build the Python package
-    needs:
-      - check-test
-    runs-on: ubuntu-latest
+  tests:
+    runs-on: ubuntu-slim
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["cpython@3.12", "cpython@3.13", "cpython@3.14", "cpython@3.14t", "cpython@3.15", "cpython@3.15t"]
+        django-version: ["5.1", "5.2" , "6.0"]
+
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-      - name: Set up Python "3.12"
-        uses: actions/setup-python@v6
+      - name: Install the project
+        run: |
+          uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups
+          uv add "django==${{ matrix.django-version }}"
+      - name: Test with pytest
+        env:
+          PYTEST_ADDOPTS: "--color=yes"
+        run: uv run pytest
+
+  build:
+    name: Build the Python package
+    needs:
+      - static-analysis
+      - tests
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v6
         with:
-          python-version: "3.12"
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v4.5.0
+      - name: Determine Version
+        id: version_step # step id used as a reference for output values
+        uses: gittools/actions/gitversion/execute@v4.5.0
+        with:
+          overrideConfig: |
+            mode: MainLine
       - name: Build the package
         run: |
-          uv build
+          if [[ "$GitVersion_BranchName" == "main" ]]; then
+            python_package_version="$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch"
+          else
+            python_package_version="$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch.dev+$GitVersion_BranchName.$GitVersion_CommitsSinceVersionSource.$GitVersion_ShortSha"
+          fi
+
+          uv version $python_package_version
+          uv build --clear --no-sources
       - name: Store the distribution packages
         uses: actions/upload-artifact@v7
         with:
           name: python-package-distributions
           path: dist/
+      - name: Create Tag
+        run: |
+          if [[ "$GitVersion_BranchName" == "main" ]]; then
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git tag -a "$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch" -m "Release $GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch"
+            git push origin "$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch"
+          fi
 
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/') # only publish to PyPI on tag pushes
+    if: github.ref == 'refs/heads/main'
     needs:
       - build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     environment:
       name: pypi
       url: https://pypi.org/p/dj-compression-middleware # Replace <package-name> with your PyPI project name
@@ -69,10 +107,12 @@ jobs:
       id-token: write
 
     steps:
-      - name: Download all the dists
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - name: Download the distribution package
         uses: actions/download-artifact@v7
         with:
           name: python-package-distributions
           path: dist/
-      - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Pulish the package
+        run: uv publish

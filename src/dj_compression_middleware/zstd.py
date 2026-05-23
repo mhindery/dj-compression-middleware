@@ -18,21 +18,20 @@ _HAS_STDLIB_ZSTD = sys.version_info >= (3, 14)
 if _HAS_STDLIB_ZSTD:
     from compression.zstd import ZstdCompressor, compress
 else:
-    import zstandard as zstd
+    import zstandard as zstd  # ty:ignore[unresolved-import, unused-ignore-comment]
     from django.utils.text import StreamingBuffer
 
 
-def zstd_compress(content):  # noqa: D103
+def zstd_compress(content, level=DEFAULT_LEVEL):  # noqa: D103
     if _HAS_STDLIB_ZSTD:
-        return compress(content, level=DEFAULT_LEVEL)
+        return compress(content, level=level)
 
-    cctx = zstd.ZstdCompressor(level=DEFAULT_LEVEL)
-    return cctx.compress(content)
+    return zstd.ZstdCompressor(level=level).compress(content)
 
 
-def zstd_compress_stream(sequence):  # noqa: D103
+def zstd_compress_stream(sequence, level=DEFAULT_LEVEL):  # noqa: D103
     if _HAS_STDLIB_ZSTD:
-        compressor = ZstdCompressor(level=DEFAULT_LEVEL)
+        compressor = ZstdCompressor(level=level)
         for item in sequence:
             out = compressor.compress(item)
             if out:
@@ -43,7 +42,7 @@ def zstd_compress_stream(sequence):  # noqa: D103
         return
 
     buf = StreamingBuffer()
-    cctx = zstd.ZstdCompressor(level=DEFAULT_LEVEL)
+    cctx = zstd.ZstdCompressor(level=level)
     with cctx.stream_writer(buf, write_return_read=False) as compressor:
         yield buf.read()
         for item in sequence:

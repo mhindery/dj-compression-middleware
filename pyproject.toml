@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.8.15,<0.9.0"]
+requires = ["uv_build>=0.11"]
 build-backend = "uv_build"
 
 [project]
@@ -8,7 +8,7 @@ authors = [
     { name = "Mathieu Hinderyckx", email = "mathieu.hinderyckx@gmail.com" },
 ]
 description = "Django middleware to compress responses with gzip, brotli and zstd."
-version = "0.0.4"
+version = "0.0.1.dev0"
 readme = "README.md"
 requires-python = ">=3.12,<3.16"
 classifiers = [
@@ -17,7 +17,7 @@ classifiers = [
     'Framework :: Django :: 5.2',
     'Framework :: Django :: 6.0',
     'Intended Audience :: Developers',
-    'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
+    'License :: OSI Approved :: MIT License',
     'Natural Language :: English',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3',
@@ -31,7 +31,7 @@ classifiers = [
 dependencies = [
     "brotli>=1.1.0 ; platform_python_implementation != 'PyPy'",
     "brotlipy>=0.7.0 ; platform_python_implementation == 'PyPy'",
-    "django>=4.0",
+    "django>=5.1",
     # Python 3.14+ provides `compression.zstd` in the standard library (PEP 784),
     # so the third-party package is only needed on older interpreters.
     "zstandard>=0.24.0 ; python_version < '3.14'",
@@ -41,7 +41,7 @@ dependencies = [
 version_file = "src/dj_compression_middleware/_version.py"
 
 [dependency-groups]
-dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.15.13"]
+dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.15.13", "ty>=0.0.39"]
 tests = [
     "coverage>=7.14.0",
     "pytest>=9",
@@ -54,7 +54,6 @@ tests = [
 
 [tool.uv]
 package = true
-cache-keys = [{ file = "pyproject.toml" }]
 environments = [
     "sys_platform == 'darwin'",
     "sys_platform == 'linux'",
@@ -63,7 +62,7 @@ environments = [
 
 # ==== ruff ====
 [tool.ruff]
-line-length = 120
+line-length = 240
 indent-width = 4
 preview = false
 required-version = ">=0.15"
@@ -81,6 +80,8 @@ ignore = [
     "CPY00",
     "D100",
     "D104",
+    "DOC201",
+    "COM812",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
