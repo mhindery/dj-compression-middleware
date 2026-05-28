@@ -7,6 +7,7 @@ from django.utils.cache import patch_vary_headers
 
 from .br import brotli_compress, brotli_compress_stream
 from .gzip import compress_sequence as gzip_compress_stream, compress_string as gzip_compress
+from .zlib import compress_sequence as zlib_compress_stream, compress_string as zlib_compress
 from .zstd import zstd_compress, zstd_compress_stream
 
 
@@ -35,6 +36,7 @@ class CompressionMiddleware:
     ZSTD_LEVEL = 7
     BROTLI_QUALITY = 4
     GZIP_COMPRESSLEVEL = 6
+    ZLIB_COMPRESSLEVEL = -1
 
     COMPRESSORS: tuple[tuple[str, Callable[[bytes], bytes], Callable[[Iterable[bytes]], Iterable[bytes]]], ...]
 
@@ -77,6 +79,17 @@ class CompressionMiddleware:
                     gzip_compress_stream,
                     compresslevel=self.GZIP_COMPRESSLEVEL,
                     max_random_bytes=self.MAX_RANDOM_BYTES,
+                ),
+            ),
+            (
+                "deflate",
+                partial(
+                    zlib_compress,
+                    level=self.ZLIB_COMPRESSLEVEL,
+                ),
+                partial(
+                    zlib_compress_stream,
+                    level=self.ZLIB_COMPRESSLEVEL,
                 ),
             ),
         )

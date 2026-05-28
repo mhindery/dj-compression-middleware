@@ -1,8 +1,12 @@
-![PyPI - Version](https://img.shields.io/pypi/v/dj-compression-middleware)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dj-compression-middleware)
-![PyPI - Versions from Framework Classifiers](https://img.shields.io/pypi/frameworkversions/django/dj-compression-middleware)
-![PyPI - License](https://img.shields.io/pypi/l/dj-compression-middleware)
-
+<a href="https://pypi.org/project/dj_compression_middleware/">
+    <img src="https://img.shields.io/pypi/v/dj-compression-middleware" alt="PyPI - Latest version">
+</a>
+<a href="https://pypi.org/project/dj_compression_middleware/">
+    <img src="https://img.shields.io/pypi/pyversions/dj-compression-middleware" alt="PyPI - Python versions">
+</a>
+<a href="https://pypi.org/project/dj_compression_middleware/">
+    <img src="https://img.shields.io/pypi/frameworkversions/django/dj-compression-middleware" alt="PyPI - Versions from Framework Classifiers">
+</a>
 
 # Dj Compression Middleware
 
@@ -69,6 +73,7 @@ class CustomCompressionMiddleware(CompressionMiddleware):
     ZSTD_LEVEL = 7
     BROTLI_QUALITY = 4
     GZIP_COMPRESSLEVEL = 6
+    ZLIB_COMPRESSLEVEL = 8
 ```
 
 For even more customization, you can override the init method and modify the COMPRESSORS to an ordered set of your own preferred compression algorithms.

@@ -1,5 +1,6 @@
 import gzip
 import sys
+import zlib
 
 import brotli
 import pytest
@@ -13,8 +14,9 @@ else:
     import zstandard as zstd  # ty:ignore[unresolved-import, unused-ignore-comment]
 
 
-from dj_compression_middleware.gzip import compress_string
+from dj_compression_middleware.gzip import compress_string as gzip_compress_string
 from dj_compression_middleware.middleware import CompressionMiddleware
+from dj_compression_middleware.zlib import compress_string as zlib_compress_string
 from dj_compression_middleware.zstd import zstd_compress
 
 from .utils import UTF8_LOREM_IPSUM_IN_CZECH
@@ -59,6 +61,20 @@ def test_middleware_compress_response_gzip() -> None:
     assert decompressed_response.decode(encoding="utf-8") == response_content
     assert response.get("Vary") == "Accept-Encoding"
     assert response.get("Content-Encoding") == "gzip"
+
+
+def test_middleware_compress_response_zlib() -> None:
+    fake_request = HttpRequest()
+    fake_request.META["HTTP_ACCEPT_ENCODING"] = "deflate"
+    response_content = UTF8_LOREM_IPSUM_IN_CZECH
+
+    compression_middleware = CompressionMiddleware(lambda _: HttpResponse(response_content))
+    response = compression_middleware(fake_request)
+
+    decompressed_response: bytes = zlib.decompress(response.content)
+    assert decompressed_response.decode(encoding="utf-8") == response_content
+    assert response.get("Vary") == "Accept-Encoding"
+    assert response.get("Content-Encoding") == "deflate"
 
 
 def test_middleware_etag_is_updated_if_present() -> None:
@@ -174,6 +190,7 @@ def test_middleware_compress_streaming_unicode_response_brotli() -> None:
         ("br", "br"),
         ("br;q=1.0", "br"),
         ("br;q=0.0", None),
+        ("deflate", "deflate"),
         ("gzip", "gzip"),
         ("gzip;q=1.0", "gzip"),
         ("gzip;q=0.0", None),
@@ -196,7 +213,10 @@ def test_extract_encoding_name(specifier: str, expected: str | None) -> None:
         ("gzip", "gzip"),
         ("br", "br"),
         ("zstd", "zstd"),
+        ("deflate", "deflate"),
         ("gzip, br", "br"),
+        ("gzip, deflate", "gzip"),
+        ("deflate, gzip", "gzip"),
         ("br;q=1.0, gzip;q=0.8", "br"),
         ("br;q=0, gzip;q=0.8", "gzip"),
         ("br;q=0, gzip;q=0", None),
@@ -266,7 +286,7 @@ def test_middleware_compress_response_gzip_custom_compression_level() -> None:
     compression_middleware = CustomCompressionMiddleware(lambda _: HttpResponse(response_content))
     response = compression_middleware(fake_request)
 
-    compressed_data = compress_string(
+    compressed_data = gzip_compress_string(
         response_content.encode("utf-8"),
         compresslevel=9,
         max_random_bytes=CustomCompressionMiddleware.MAX_RANDOM_BYTES,
@@ -278,3 +298,27 @@ def test_middleware_compress_response_gzip_custom_compression_level() -> None:
     assert decompressed_response.decode(encoding="utf-8") == response_content
     assert response.get("Vary") == "Accept-Encoding"
     assert response.get("Content-Encoding") == "gzip"
+
+
+def test_middleware_compress_response_zlib_custom_compression_level() -> None:
+    fake_request = HttpRequest()
+    fake_request.META["HTTP_ACCEPT_ENCODING"] = "deflate"
+    response_content = UTF8_LOREM_IPSUM_IN_CZECH
+
+    class CustomCompressionMiddleware(CompressionMiddleware):
+        ZLIB_COMPRESSLEVEL = 9
+
+    compression_middleware = CustomCompressionMiddleware(lambda _: HttpResponse(response_content))
+    response = compression_middleware(fake_request)
+
+    compressed_data = zlib_compress_string(
+        response_content.encode("utf-8"),
+        level=9,
+    )
+
+    assert response.content == compressed_data
+
+    decompressed_response: bytes = zlib.decompress(response.content)
+    assert decompressed_response.decode(encoding="utf-8") == response_content
+    assert response.get("Vary") == "Accept-Encoding"
+    assert response.get("Content-Encoding") == "deflate"

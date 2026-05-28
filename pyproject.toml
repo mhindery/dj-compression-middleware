@@ -33,6 +33,7 @@ dependencies = [
     "django>=5.1",
     # Python 3.14+ provides `compression.zstd` in the standard library (PEP 784),
     # so the third-party package is only needed on older interpreters.
+    "ruff>=0.15.14",
     "zstandard>=0.24.0 ; python_version < '3.14'",
 ]
 
@@ -40,7 +41,7 @@ dependencies = [
 version_file = "src/dj_compression_middleware/_version.py"
 
 [dependency-groups]
-dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.15.13", "ty>=0.0.39"]
+dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.15.14", "ty>=0.0.40"]
 tests = [
     "coverage>=7.14.0",
     "pytest>=9",
