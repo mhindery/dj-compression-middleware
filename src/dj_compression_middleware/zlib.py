@@ -2,11 +2,6 @@ from collections.abc import Iterable
 from zlib import DEFLATED, Z_DEFAULT_COMPRESSION, compress as zlib_compress, compressobj as zlib_compressobj
 
 
-# The functions below are adapted from django.utils.text, with as only change the addition of a compresslevel argument,
-# to allow for choosing the compression level.
-# Django's built-in functions do not take a configurable compression level and use 6 hardcoded.
-
-
 def compress_string(  # noqa: D103
     s: str | bytes,
     level: int = Z_DEFAULT_COMPRESSION,
