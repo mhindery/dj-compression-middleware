@@ -178,10 +178,16 @@ def test_middleware_wont_compress_response_if_it_was_already_compressed() -> Non
     assert response.get("Content-Encoding") == "gzip"
 
 
-def test_middleware_compress_streaming_response_brotli() -> None:
+@pytest.mark.parametrize(
+    ("sequence"),
+    [
+        [b"a" * 500, b"b" * 200, b"a" * 300],
+        [b"a" * 500, b"\xc3\xa9" * 200, b"a" * 300],
+    ],
+)
+def test_middleware_compress_streaming_response_brotli(sequence: list[bytes]) -> None:
     fake_request = HttpRequest()
     fake_request.META["HTTP_ACCEPT_ENCODING"] = "br"
-    sequence = [b"a" * 500, b"b" * 200, b"a" * 300]
 
     def stream():  # noqa: ANN202
         yield from sequence
@@ -200,32 +206,16 @@ def test_middleware_compress_streaming_response_brotli() -> None:
     assert response.get("Content-Encoding") == "br"
 
 
-def test_middleware_compress_streaming_unicode_response_brotli() -> None:
-    fake_request = HttpRequest()
-    fake_request.META["HTTP_ACCEPT_ENCODING"] = "br"
-    sequence = ["a" * 500, "é" * 200, "a" * 300]
-
-    def stream():  # noqa: ANN202
-        yield from sequence
-
-    compression_middleware = CompressionMiddleware(
-        lambda _: StreamingHttpResponse(
-            stream(),
-            headers={"Content-Type": "text/html; charset=UTF-8"},
-        ),
-    )
-    response = compression_middleware(fake_request)
-
-    decompressed_response: bytes = brotli.decompress(b"".join(response))
-    assert decompressed_response == b"".join(x.encode("utf-8") for x in sequence)
-    assert response.get("Vary") == "Accept-Encoding"
-    assert response.get("Content-Encoding") == "br"
-
-
-def test_middleware_compress_streaming_response_gzip() -> None:
+@pytest.mark.parametrize(
+    ("sequence"),
+    [
+        [b"a" * 500, b"b" * 200, b"a" * 300],
+        [b"a" * 500, b"\xc3\xa9" * 200, b"a" * 300],
+    ],
+)
+def test_middleware_compress_streaming_response_gzip(sequence: list[bytes]) -> None:
     fake_request = HttpRequest()
     fake_request.META["HTTP_ACCEPT_ENCODING"] = "gzip"
-    sequence = [b"a" * 500, b"b" * 200, b"a" * 300]
 
     def stream():  # noqa: ANN202
         yield from sequence
@@ -244,53 +234,16 @@ def test_middleware_compress_streaming_response_gzip() -> None:
     assert response.get("Content-Encoding") == "gzip"
 
 
-def test_middleware_compress_streaming_unicode_response_gzip() -> None:
-    fake_request = HttpRequest()
-    fake_request.META["HTTP_ACCEPT_ENCODING"] = "gzip"
-    sequence = ["a" * 500, "é" * 200, "a" * 300]
-
-    def stream():  # noqa: ANN202
-        yield from sequence
-
-    compression_middleware = CompressionMiddleware(
-        lambda _: StreamingHttpResponse(
-            stream(),
-            headers={"Content-Type": "text/html; charset=UTF-8"},
-        ),
-    )
-    response = compression_middleware(fake_request)
-
-    decompressed_response: bytes = gzip.decompress(b"".join(response))
-    assert decompressed_response == b"".join(x.encode("utf-8") for x in sequence)
-    assert response.get("Vary") == "Accept-Encoding"
-    assert response.get("Content-Encoding") == "gzip"
-
-
-def test_middleware_compress_streaming_response_zlib() -> None:
+@pytest.mark.parametrize(
+    ("sequence"),
+    [
+        [b"a" * 500, b"b" * 200, b"a" * 300],
+        [b"a" * 500, b"\xc3\xa9" * 200, b"a" * 300],
+    ],
+)
+def test_middleware_compress_streaming_response_zlib(sequence: list[bytes]) -> None:
     fake_request = HttpRequest()
     fake_request.META["HTTP_ACCEPT_ENCODING"] = "deflate"
-    sequence = [b"a" * 500, b"b" * 200, b"a" * 300]
-
-    def stream():  # noqa: ANN202
-        yield from sequence
-
-    compression_middleware = CompressionMiddleware(
-        lambda _: StreamingHttpResponse(
-            stream(),
-            headers={"Content-Type": "text/html; charset=UTF-8"},
-        ),
-    )
-    response = compression_middleware(fake_request)
-    decompressed_response: bytes = zlib.decompress(b"".join(response))
-    assert decompressed_response == b"".join(sequence)
-    assert response.get("Vary") == "Accept-Encoding"
-    assert response.get("Content-Encoding") == "deflate"
-
-
-def test_middleware_compress_streaming_unicode_response_zlib() -> None:
-    fake_request = HttpRequest()
-    fake_request.META["HTTP_ACCEPT_ENCODING"] = "deflate"
-    sequence = ["a" * 500, "é" * 200, "a" * 300]
 
     def stream():  # noqa: ANN202
         yield from sequence
@@ -304,36 +257,21 @@ def test_middleware_compress_streaming_unicode_response_zlib() -> None:
     response = compression_middleware(fake_request)
 
     decompressed_response: bytes = zlib.decompress(b"".join(response))
-    assert decompressed_response == b"".join(x.encode("utf-8") for x in sequence)
+    assert decompressed_response == b"".join(sequence)
     assert response.get("Vary") == "Accept-Encoding"
     assert response.get("Content-Encoding") == "deflate"
 
 
-def test_middleware_compress_streaming_response_zstd() -> None:
+@pytest.mark.parametrize(
+    ("sequence"),
+    [
+        [b"a" * 500, b"b" * 200, b"a" * 300],
+        [b"a" * 500, b"\xc3\xa9" * 200, b"a" * 300],
+    ],
+)
+def test_middleware_compress_streaming_response_zstd(sequence: list[bytes]) -> None:
     fake_request = HttpRequest()
     fake_request.META["HTTP_ACCEPT_ENCODING"] = "zstd"
-    sequence = [b"a" * 500, b"b" * 200, b"a" * 300]
-
-    def stream():  # noqa: ANN202
-        yield from sequence
-
-    compression_middleware = CompressionMiddleware(
-        lambda _: StreamingHttpResponse(
-            stream(),
-            headers={"Content-Type": "text/html; charset=UTF-8"},
-        ),
-    )
-    response = compression_middleware(fake_request)
-    decompressed_response: bytes = zstd.decompress(b"".join(response), 1000)
-    assert decompressed_response == b"".join(sequence)
-    assert response.get("Vary") == "Accept-Encoding"
-    assert response.get("Content-Encoding") == "zstd"
-
-
-def test_middleware_compress_streaming_unicode_response_zstd() -> None:
-    fake_request = HttpRequest()
-    fake_request.META["HTTP_ACCEPT_ENCODING"] = "zstd"
-    sequence = ["a" * 500, "é" * 200, "a" * 300]
 
     def stream():  # noqa: ANN202
         yield from sequence
@@ -347,7 +285,7 @@ def test_middleware_compress_streaming_unicode_response_zstd() -> None:
     response = compression_middleware(fake_request)
 
     decompressed_response: bytes = zstd.decompress(b"".join(response), 1200)
-    assert decompressed_response == b"".join(x.encode("utf-8") for x in sequence)
+    assert decompressed_response == b"".join(sequence)
     assert response.get("Vary") == "Accept-Encoding"
     assert response.get("Content-Encoding") == "zstd"
 
