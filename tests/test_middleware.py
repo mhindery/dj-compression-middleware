@@ -37,7 +37,7 @@ def test_async_get_response_marks_coroutine_function() -> None:
     In case of an async get_response, the handler runs it natively, rather than adapting it with sync_to_async.
     A sync get_response leaves it unmarked, so it is treated as a regular function.
     """
-    assert iscoroutinefunction(CompressionMiddleware(async_get_response_empty))
+    assert iscoroutinefunction(CompressionMiddleware(async_get_response_empty))  # ty:ignore[invalid-argument-type]
     assert not iscoroutinefunction(CompressionMiddleware(get_response_empty))
 
 
@@ -46,8 +46,8 @@ async def test_sync_and_async_get_response_work() -> None:
     """The middleware processes both sync and async get_response functions correctly."""
     fake_request = HttpRequest()
 
-    mdlw_async = CompressionMiddleware(async_get_response_empty)
-    async_response = await mdlw_async(fake_request)
+    mdlw_async = CompressionMiddleware(async_get_response_empty)  # ty: ignore[invalid-argument-type]
+    async_response = await mdlw_async(fake_request)  # ty:ignore[invalid-await]
     assert async_response.content == b"hello world"
 
     mdlw_sync = CompressionMiddleware(get_response_empty)

@@ -41,7 +41,7 @@ dependencies = [
 version_file = "src/dj_compression_middleware/_version.py"
 
 [dependency-groups]
-dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.15.14", "ty>=0.0.40"]
+dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.15.14", "ty>=0.0.46"]
 tests = [
     "coverage>=7.14.0",
     "pytest>=9",

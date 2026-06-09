@@ -45,8 +45,6 @@ class CompressionMiddleware:
     COMPRESSORS: tuple[tuple[str, Callable[[bytes], bytes], Callable[[Iterable[bytes]], Iterable[bytes]]], ...]
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse | StreamingHttpResponse]) -> None:  # noqa: D107
-        if get_response is None:
-            raise ValueError("get_response must be provided.")  # noqa: EM101, TRY003
         self.get_response = get_response
 
         self.is_async = iscoroutinefunction(get_response)
@@ -106,7 +104,7 @@ class CompressionMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # noqa: D102
         if self.is_async:
-            return self.__acall__(request)
+            return self.__acall__(request)  # ty: ignore[invalid-return-type]
 
         response = self.get_response(request)
         return self.process_response(request, response)

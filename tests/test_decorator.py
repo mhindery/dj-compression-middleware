@@ -36,7 +36,7 @@ async def test_middleware_compress_does_not_compress_when_using_async_no_compres
         return HttpResponse(response_content)
 
     compression_middleware = CompressionMiddleware(handler)
-    response = await compression_middleware(fake_request)
+    response = await compression_middleware(fake_request)  # ty:ignore[invalid-await]
 
     assert response.content.decode("utf-8") == response_content
     assert response.get("Vary") is None
