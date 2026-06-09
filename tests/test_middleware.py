@@ -7,6 +7,13 @@ import brotli
 import pytest
 from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 
+from dj_compression_middleware.gzip import compress_string as gzip_compress_string
+from dj_compression_middleware.middleware import CompressionMiddleware
+from dj_compression_middleware.zlib import compress_string as zlib_compress_string
+from dj_compression_middleware.zstd import zstd_compress
+
+from .utils import UTF8_LOREM_IPSUM_IN_CZECH
+
 
 _HAS_STDLIB_ZSTD = sys.version_info >= (3, 14)
 
@@ -15,14 +22,6 @@ if _HAS_STDLIB_ZSTD:
     from compression import zstd
 else:
     import zstandard as zstd  # ty:ignore[unresolved-import, unused-ignore-comment]
-
-
-from dj_compression_middleware.gzip import compress_string as gzip_compress_string
-from dj_compression_middleware.middleware import CompressionMiddleware
-from dj_compression_middleware.zlib import compress_string as zlib_compress_string
-from dj_compression_middleware.zstd import zstd_compress
-
-from .utils import UTF8_LOREM_IPSUM_IN_CZECH
 
 
 async def async_get_response_empty(request: HttpRequest) -> HttpResponse:  # noqa: ARG001, RUF029
