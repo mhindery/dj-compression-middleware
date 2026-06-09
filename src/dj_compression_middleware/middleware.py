@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Callable, Iterable
 from functools import partial
+from inspect import iscoroutinefunction, markcoroutinefunction
 
 from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from django.utils.cache import patch_vary_headers
@@ -16,6 +17,9 @@ logger = logging.getLogger(__name__)
 
 class CompressionMiddleware:
     """Middleware to compress the response content if the browser allows gzip, brotli or zstd compression."""
+
+    sync_capable = True
+    async_capable = True
 
     # For gzip, we add some random bytes to the end of the content to make it more difficult for attackers to use BREACH attacks to extract information from compressed responses.  # noqa: E501
     # This is a common mitigation strategy for such attacks. The number of random bytes added can be adjusted based on the desired level of security and performance trade-offs.  # noqa: E501
@@ -42,6 +46,10 @@ class CompressionMiddleware:
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse | StreamingHttpResponse]) -> None:  # noqa: D107
         self.get_response = get_response
+
+        self.is_async = iscoroutinefunction(get_response)
+        if self.is_async:
+            markcoroutinefunction(self)
 
         # supported encodings in order of preference
         # (encoding, bulk_compressor, stream_compressor)  # noqa: ERA001
@@ -94,9 +102,23 @@ class CompressionMiddleware:
             ),
         )
 
-    def __call__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # noqa: C901, D102
-        response = self.get_response(request)
+    def __call__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # noqa: D102
+        if self.is_async:
+            return self.__acall__(request)  # ty: ignore[invalid-return-type]
 
+        response = self.get_response(request)
+        return self.process_response(request, response)
+
+    async def __acall__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # noqa: D105, PLW3201
+        response = await self.get_response(request)  # ty:ignore[invalid-await]
+        return self.process_response(request, response)
+
+    def process_response(  # noqa: C901
+        self,
+        request: HttpRequest,
+        response: HttpResponse | StreamingHttpResponse,
+    ) -> HttpResponse | StreamingHttpResponse:
+        """Compress the response content if the client and response allows it and if it's worth compressing."""
         if getattr(response, "no_compress", False) or getattr(self.get_response, "no_compress", False):
             return response
 
