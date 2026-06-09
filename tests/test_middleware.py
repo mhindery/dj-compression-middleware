@@ -8,7 +8,9 @@ import pytest
 from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 
 
-if sys.version_info >= (3, 14):
+_HAS_STDLIB_ZSTD = sys.version_info >= (3, 14)
+
+if _HAS_STDLIB_ZSTD:
     # Python 3.14+ ships zstd in the standard library (PEP 784).
     from compression import zstd
 else:
@@ -284,7 +286,11 @@ def test_middleware_compress_streaming_response_zstd(sequence: list[bytes]) -> N
     )
     response = compression_middleware(fake_request)
 
-    decompressed_response: bytes = zstd.decompress(b"".join(response), 1200)
+    if _HAS_STDLIB_ZSTD:
+        decompressed_response: bytes = zstd.decompress(b"".join(response))
+    else:
+        decompressed_response: bytes = zstd.decompress(b"".join(response), 1200)
+
     assert decompressed_response == b"".join(sequence)
     assert response.get("Vary") == "Accept-Encoding"
     assert response.get("Content-Encoding") == "zstd"
