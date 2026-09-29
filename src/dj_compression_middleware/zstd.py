@@ -20,14 +20,14 @@ else:
     from django.utils.text import StreamingBuffer
 
 
-def zstd_compress(content: bytes, level: int = DEFAULT_LEVEL) -> bytes:  # noqa: D103
+def zstd_compress(content: bytes, level: int = DEFAULT_LEVEL) -> bytes:  # ruff: ignore[undocumented-public-function]
     if _HAS_STDLIB_ZSTD:
         return compress(content, level=level)
 
     return zstd.ZstdCompressor(level=level).compress(content)
 
 
-def zstd_compress_stream(sequence: Iterable[bytes], level: int = DEFAULT_LEVEL) -> Iterable[bytes]:  # noqa: D103
+def zstd_compress_stream(sequence: Iterable[bytes], level: int = DEFAULT_LEVEL) -> Iterable[bytes]:  # ruff: ignore[undocumented-public-function]
     if _HAS_STDLIB_ZSTD:
         compressor = ZstdCompressor(level=level)
         for item in sequence:

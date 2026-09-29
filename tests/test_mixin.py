@@ -13,7 +13,7 @@ def test_middleware_compress_does_not_compress_when_using_no_compress_mixin() ->
     response_content = UTF8_LOREM_IPSUM_IN_CZECH
 
     class TestView(NoCompressMixin, View):
-        def get(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
+        def get(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:  # ruff: ignore[unused-method-argument]
             return HttpResponse(response_content)
 
     compression_middleware = CompressionMiddleware(TestView.as_view())

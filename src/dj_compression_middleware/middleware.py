@@ -21,9 +21,9 @@ class CompressionMiddleware:
     sync_capable = True
     async_capable = True
 
-    # For gzip, we add some random bytes to the end of the content to make it more difficult for attackers to use BREACH attacks to extract information from compressed responses.  # noqa: E501
-    # This is a common mitigation strategy for such attacks. The number of random bytes added can be adjusted based on the desired level of security and performance trade-offs.  # noqa: E501
-    # A value of 100 is often considered a reasonable choice, as it provides a significant amount of randomness without adding too much overhead to the response size.  # noqa: E501
+    # For gzip, we add some random bytes to the end of the content to make it more difficult for attackers to use BREACH attacks to extract information from compressed responses.  # ruff: ignore[line-too-long]
+    # This is a common mitigation strategy for such attacks. The number of random bytes added can be adjusted based on the desired level of security and performance trade-offs.  # ruff: ignore[line-too-long]
+    # A value of 100 is often considered a reasonable choice, as it provides a significant amount of randomness without adding too much overhead to the response size.  # ruff: ignore[line-too-long]
     MAX_RANDOM_BYTES = 100
 
     # If a response is less than 500 bytes, it is not worth compressing.
@@ -31,7 +31,7 @@ class CompressionMiddleware:
     MIN_LEN = 500
 
     # The minimum gain required to justify compression.
-    # If the compressed content is not at least this many bytes smaller than the original content, then the original content will be returned uncompressed.  # noqa: E501
+    # If the compressed content is not at least this many bytes smaller than the original content, then the original content will be returned uncompressed.  # ruff: ignore[line-too-long]
     # This is to avoid the overhead of compression when it doesn't provide a significant reduction in size.
     # The overhead if the addition of the Content-Encoding header is 24 bytes + the decompression effort on the client.
     MIN_IMPROVEMENT = 100
@@ -44,7 +44,7 @@ class CompressionMiddleware:
 
     COMPRESSORS: tuple[tuple[str, Callable[[bytes], bytes], Callable[[Iterable[bytes]], Iterable[bytes]]], ...]
 
-    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse | StreamingHttpResponse]) -> None:  # noqa: D107
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse | StreamingHttpResponse]) -> None:  # ruff: ignore[undocumented-public-init]
         self.get_response = get_response
 
         self.is_async = iscoroutinefunction(get_response)
@@ -52,7 +52,7 @@ class CompressionMiddleware:
             markcoroutinefunction(self)
 
         # supported encodings in order of preference
-        # (encoding, bulk_compressor, stream_compressor)  # noqa: ERA001
+        # (encoding, bulk_compressor, stream_compressor)  # ruff: ignore[commented-out-code]
         self.COMPRESSORS = (
             (
                 "zstd",
@@ -102,18 +102,18 @@ class CompressionMiddleware:
             ),
         )
 
-    def __call__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # noqa: D102
+    def __call__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # ruff: ignore[undocumented-public-method]
         if self.is_async:
             return self.__acall__(request)  # ty: ignore[invalid-return-type]
 
         response = self.get_response(request)
         return self.process_response(request, response)
 
-    async def __acall__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # noqa: D105, PLW3201
+    async def __acall__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # ruff: ignore[undocumented-magic-method, bad-dunder-method-name]
         response = await self.get_response(request)  # ty:ignore[invalid-await]
         return self.process_response(request, response)
 
-    def process_response(  # noqa: C901
+    def process_response(  # ruff: ignore[complex-structure]
         self,
         request: HttpRequest,
         response: HttpResponse | StreamingHttpResponse,
@@ -218,7 +218,7 @@ class CompressionMiddleware:
             if "=" in quality_level:
                 _, quality_level = quality_level.split("=", 1)
                 try:
-                    if float(quality_level) == 0.0:  # noqa: RUF069
+                    if float(quality_level) == 0.0:  # ruff: ignore[float-equality-comparison]
                         return None
                 except ValueError:
                     pass

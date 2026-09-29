@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.11,<0.12"]
+requires = ["uv_build>=0.8.15,<0.9.0"]
 build-backend = "uv_build"
 
 [project]
@@ -8,53 +8,57 @@ authors = [
     { name = "Mathieu Hinderyckx", email = "mathieu.hinderyckx@gmail.com" },
 ]
 description = "Django middleware to compress responses with gzip, brotli and zstd."
-version = "0.0.1.dev0"
+version = "0.0.2"
 readme = "README.md"
-requires-python = ">=3.12,<3.16"
+requires-python = ">=3.10,<3.15"
 classifiers = [
     'Framework :: Django',
     'Framework :: Django :: 5.1',
     'Framework :: Django :: 5.2',
     'Framework :: Django :: 6.0',
+    'Framework :: Django :: 6.1',
     'Intended Audience :: Developers',
+    'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
     'Natural Language :: English',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
     'Programming Language :: Python :: 3.15',
     'Programming Language :: Python :: Implementation :: CPython',
     'Programming Language :: Python :: Implementation :: PyPy',
+    'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware',
+    'Topic :: Internet :: WWW/HTTP :: ASGI :: Middleware',
 ]
 dependencies = [
     "brotli>=1.1.0 ; platform_python_implementation != 'PyPy'",
     "brotlipy>=0.7.0 ; platform_python_implementation == 'PyPy'",
-    "django>=5.1",
-    # Python 3.14+ provides `compression.zstd` in the standard library (PEP 784),
-    # so the third-party package is only needed on older interpreters.
-    "ruff>=0.15.14",
-    "zstandard>=0.24.0 ; python_version < '3.14'",
+    "django>=4.0",
+    "zstandard>=0.24.0",
 ]
 
 [tool.setuptools_scm]
 version_file = "src/dj_compression_middleware/_version.py"
 
 [dependency-groups]
-dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.15.14", "ty>=0.0.46"]
+dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.16.9"]
 tests = [
-    "coverage>=7.14.0",
-    "pytest>=9",
-    "pytest-asyncio>=1.4.0",
+    "coverage>=7.5.3",
+    "pytest>=9.1",
     "pytest-cov>=7.1.0",
-    "pytest-django>=4.12.0",
-    "pytest-env>=1.6.0",
-    "pytest-randomly>=4.1.0",
-    "pytest-sugar>=1.1.1",
+    "pytest-django>=4.14.0",
+    "pytest-env>=1.7.1",
+    "pytest-randomly>=5.0.0",
+    "pytest-sugar>=1.0.0",
 ]
 
 [tool.uv]
 package = true
+cache-keys = [{ file = "pyproject.toml" }]
 environments = [
     "sys_platform == 'darwin'",
     "sys_platform == 'linux'",
@@ -64,9 +68,10 @@ environments = [
 # ==== ruff ====
 [tool.ruff]
 line-length = 120
+extend-include = ["*.ipynb"]
 indent-width = 4
 preview = false
-required-version = ">=0.15"
+required-version = ">=0.4.5"
 target-version = "py312"
 unsafe-fixes = true
 
@@ -77,16 +82,20 @@ fix = true
 [tool.ruff.lint]
 preview = true
 select = ["ALL"]
+
 ignore = [
-    "CPY00",
-    "D100",
-    "D104",
-    "DOC201",
+    "missing-copyright-notice",
+    "undocumented-public-module",
+    "suspicious-non-cryptographic-random-usage",
+    "docstring-missing-returns",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
-unfixable = ["T201"]
+unfixable = ["print"]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
 preview = false
@@ -97,29 +106,44 @@ docstring-code-format = true
 docstring-code-line-length = "dynamic"
 exclude = ["*.pyi", "**/migrations/*.py"]
 
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = true
+
+# 4. Ignore `E402` (import violations) in all `__init__.py` files, and in select subdirectories.
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = [
-    "RUF06",
-]
+"__init__.py" = ["module-import-not-at-top-of-file", "undocumented-public-package"]
 "test*.py" = [
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D105",
-    "D107",
-    "PLR2004",
-    "PLR6301",
-    "RUF012",
-    "S101",
-    "S311",
+    "assert",
+    "no-self-use",
+    "undocumented-magic-method",
+    "mutable-class-default",
+    "undocumented-public-class",
+    "undocumented-public-method",
+    "undocumented-public-function",
+    "undocumented-public-init",
+    "unused-function-argument",
+    "missing-return-type-undocumented-public-function",
+    "magic-value-comparison",
+    "too-many-locals",
+    "non-empty-init-module",
+    "float-equality-comparison",
+    "too-many-statements",
 ]
+
+[tool.ruff.lint.pylint]
+max-args = 20
+max-positional-args = 20
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+avoid-escape = true
+
 [tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true
+ignore-fully-untyped = true     # allows for gradual typing
 suppress-none-returning = false
 
 [tool.ruff.lint.flake8-unused-arguments]
@@ -135,10 +159,16 @@ known-local-folder = ["src"]
 lines-after-imports = 2
 
 # ==== pytest ====
+[tool.pytest_env]
+ENVIRONMENT = "test"
+
+[tool.pytest]
+color = "yes"
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-s --durations=5 -v --import-mode=importlib --cov --cov-report=term --cov-report=html --cov-report=xml --junit-xml=junit.xml"
-python_files = ["tests/test_*.py"]
+python_files = ["tests/tests.py", "tests/test_*.py"]
 
 junit_family = 'xunit2'
 junit_suite_name = "test_suite"
@@ -146,6 +176,10 @@ junit_logging = 'all'
 junit_log_passing_tests = true
 junit_duration_report = "call"
 
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
 
 # ==== Coverage ====
 [tool.coverage.run]

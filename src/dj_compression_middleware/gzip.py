@@ -2,7 +2,7 @@ import gzip
 from collections.abc import Iterable
 from gzip import GzipFile, compress as gzip_compress
 
-from django.utils.text import StreamingBuffer, _get_random_filename  # noqa: PLC2701
+from django.utils.text import StreamingBuffer, _get_random_filename  # ruff: ignore[import-private-name]
 
 
 # The functions below are adapted from django.utils.text, with as only change the addition of a compresslevel argument,
@@ -10,7 +10,7 @@ from django.utils.text import StreamingBuffer, _get_random_filename  # noqa: PLC
 # Django's built-in functions do not take a configurable compression level and use 6 hardcoded.
 
 
-def compress_string(  # noqa: D103
+def compress_string(  # ruff: ignore[undocumented-public-function]
     s: str | bytes,
     compresslevel: int = 6,
     max_random_bytes: int | None = None,
@@ -29,7 +29,7 @@ def compress_string(  # noqa: D103
     return bytes(header) + filename + compressed_view[10:]
 
 
-def compress_sequence(  # noqa: D103
+def compress_sequence(  # ruff: ignore[undocumented-public-function]
     sequence: Iterable[bytes],
     compresslevel: int = 6,
     max_random_bytes: int | None = None,

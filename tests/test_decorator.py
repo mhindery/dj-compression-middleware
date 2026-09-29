@@ -13,7 +13,7 @@ def test_middleware_compress_does_not_compress_when_using_no_compress_decorator(
     response_content = UTF8_LOREM_IPSUM_IN_CZECH
 
     @no_compress
-    def handler(request: HttpRequest) -> HttpResponse:  # noqa: ARG001
+    def handler(request: HttpRequest) -> HttpResponse:
         return HttpResponse(response_content)
 
     compression_middleware = CompressionMiddleware(handler)
@@ -32,7 +32,7 @@ async def test_middleware_compress_does_not_compress_when_using_async_no_compres
     response_content = UTF8_LOREM_IPSUM_IN_CZECH
 
     @no_compress
-    async def handler(request: HttpRequest) -> HttpResponse:  # noqa: ARG001, RUF029
+    async def handler(request: HttpRequest) -> HttpResponse:  # ruff: ignore[unused-async]
         return HttpResponse(response_content)
 
     compression_middleware = CompressionMiddleware(handler)

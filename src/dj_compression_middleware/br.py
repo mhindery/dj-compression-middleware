@@ -6,11 +6,11 @@ from brotli import Compressor, compress
 DEFAULT_LEVEL = 4
 
 
-def brotli_compress(content: bytes, quality: int = DEFAULT_LEVEL) -> bytes:  # noqa: D103
+def brotli_compress(content: bytes, quality: int = DEFAULT_LEVEL) -> bytes:  # ruff: ignore[undocumented-public-function]
     return compress(content, quality=quality)
 
 
-def brotli_compress_stream(sequence: Iterable[bytes], quality: int = DEFAULT_LEVEL) -> Iterable[bytes]:  # noqa: D103
+def brotli_compress_stream(sequence: Iterable[bytes], quality: int = DEFAULT_LEVEL) -> Iterable[bytes]:  # ruff: ignore[undocumented-public-function]
     yield b""
 
     compressor = Compressor(quality=quality)
