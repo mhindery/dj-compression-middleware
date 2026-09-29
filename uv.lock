@@ -386,7 +386,6 @@ dependencies = [
     { name = "brotlipy", marker = "platform_python_implementation == 'PyPy'" },
     { name = "django", version = "5.2.17", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "django", version = "6.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "ruff" },
     { name = "zstandard", marker = "python_full_version < '3.14'" },
 ]
 
@@ -412,7 +411,6 @@ requires-dist = [
     { name = "brotli", marker = "platform_python_implementation != 'PyPy'", specifier = ">=1.1.0" },
     { name = "brotlipy", marker = "platform_python_implementation == 'PyPy'", specifier = ">=0.7.0" },
     { name = "django", specifier = ">=5.1" },
-    { name = "ruff", specifier = ">=0.15.14" },
     { name = "zstandard", marker = "python_full_version < '3.14'", specifier = ">=0.24.0" },
 ]
 

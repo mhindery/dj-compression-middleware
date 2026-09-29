@@ -18,7 +18,6 @@ classifiers = [
     'Framework :: Django :: 6.0',
     'Framework :: Django :: 6.1',
     'Intended Audience :: Developers',
-    'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
     'Natural Language :: English',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3',
@@ -39,7 +38,6 @@ dependencies = [
     "django>=5.1",
     # Python 3.14+ provides `compression.zstd` in the standard library (PEP 784),
     # so the third-party package is only needed on older interpreters.
-    "ruff>=0.15.14",
     "zstandard>=0.24.0 ; python_version < '3.14'",
 ]
 
@@ -106,10 +104,6 @@ docstring-code-format = true
 docstring-code-line-length = "dynamic"
 exclude = ["*.pyi", "**/migrations/*.py"]
 
-# Like Black, respect magic trailing commas.
-skip-magic-trailing-comma = true
-
-# 4. Ignore `E402` (import violations) in all `__init__.py` files, and in select subdirectories.
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["module-import-not-at-top-of-file", "undocumented-public-package"]
 "test*.py" = [
