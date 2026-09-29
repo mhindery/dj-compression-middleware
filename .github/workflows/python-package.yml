@@ -58,7 +58,7 @@ jobs:
     needs:
       - static-analysis
       - tests
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     permissions: write-all
     steps:
       - uses: actions/checkout@v7
