@@ -10,7 +10,7 @@ authors = [
 description = "Django middleware to compress responses with gzip, brotli and zstd."
 version = "0.0.1.dev0"
 readme = "README.md"
-requires-python = ">=3.10,<3.16"
+requires-python = ">=3.12,<3.16"
 classifiers = [
     'Framework :: Django',
     'Framework :: Django :: 5.1',
@@ -21,8 +21,6 @@ classifiers = [
     'Natural Language :: English',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
@@ -45,7 +43,12 @@ dependencies = [
 version_file = "src/dj_compression_middleware/_version.py"
 
 [dependency-groups]
-dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.16.9"]
+dev = [
+    "ipdb>=0.13.13",
+    "ipython>=8.18.1",
+    "ruff>=0.16.9",
+    "ty>=0.0.84",
+]
 tests = [
     "coverage>=7.14.0",
     "pytest>=9.1",
