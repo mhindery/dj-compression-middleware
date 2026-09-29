@@ -188,3 +188,6 @@ directory = "htmlcov"
 
 [tool.coverage.xml]
 output = "coverage.xml"
+
+[tool.ty.rules]
+unused-ignore-comment = "ignore"
