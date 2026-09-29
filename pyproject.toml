@@ -13,7 +13,6 @@ readme = "README.md"
 requires-python = ">=3.12,<3.16"
 classifiers = [
     'Framework :: Django',
-    'Framework :: Django :: 5.1',
     'Framework :: Django :: 5.2',
     'Framework :: Django :: 6.0',
     'Framework :: Django :: 6.1',
@@ -33,7 +32,7 @@ classifiers = [
 dependencies = [
     "brotli>=1.1.0 ; platform_python_implementation != 'PyPy'",
     "brotlipy>=0.7.0 ; platform_python_implementation == 'PyPy'",
-    "django>=5.1",
+    "django>=5.2",
     # Python 3.14+ provides `compression.zstd` in the standard library (PEP 784),
     # so the third-party package is only needed on older interpreters.
     "zstandard>=0.24.0 ; python_version < '3.14'",

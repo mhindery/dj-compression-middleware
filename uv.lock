@@ -322,7 +322,7 @@ tests = [
 requires-dist = [
     { name = "brotli", marker = "platform_python_implementation != 'PyPy'", specifier = ">=1.1.0" },
     { name = "brotlipy", marker = "platform_python_implementation == 'PyPy'", specifier = ">=0.7.0" },
-    { name = "django", specifier = ">=5.1" },
+    { name = "django", specifier = ">=5.2" },
     { name = "zstandard", marker = "python_full_version < '3.14'", specifier = ">=0.24.0" },
 ]
 
