@@ -190,7 +190,7 @@ def test_middleware_compress_streaming_response_brotli(sequence: list[bytes]) ->
     fake_request = HttpRequest()
     fake_request.META["HTTP_ACCEPT_ENCODING"] = "br"
 
-    def stream():
+    def stream():  # ruff: ignore[missing-return-type-private-function]
         yield from sequence
 
     compression_middleware = CompressionMiddleware(
@@ -218,7 +218,7 @@ def test_middleware_compress_streaming_response_gzip(sequence: list[bytes]) -> N
     fake_request = HttpRequest()
     fake_request.META["HTTP_ACCEPT_ENCODING"] = "gzip"
 
-    def stream():
+    def stream():  # ruff: ignore[missing-return-type-private-function]
         yield from sequence
 
     compression_middleware = CompressionMiddleware(
@@ -246,7 +246,7 @@ def test_middleware_compress_streaming_response_zlib(sequence: list[bytes]) -> N
     fake_request = HttpRequest()
     fake_request.META["HTTP_ACCEPT_ENCODING"] = "deflate"
 
-    def stream():
+    def stream():  # ruff: ignore[missing-return-type-private-function]
         yield from sequence
 
     compression_middleware = CompressionMiddleware(
@@ -274,7 +274,7 @@ def test_middleware_compress_streaming_response_zstd(sequence: list[bytes]) -> N
     fake_request = HttpRequest()
     fake_request.META["HTTP_ACCEPT_ENCODING"] = "zstd"
 
-    def stream():
+    def stream():  # ruff: ignore[missing-return-type-private-function]
         yield from sequence
 
     compression_middleware = CompressionMiddleware(
