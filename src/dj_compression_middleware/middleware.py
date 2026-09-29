@@ -188,6 +188,11 @@ class CompressionMiddleware:
         if accept_encoding_header == "*":
             return self.COMPRESSORS[0]
 
+        # If nothing is specified at all, we should not compress and short-circuit to returning None.
+        # E.g. the django.test.client has an empty Accept-Encoding header.
+        if not accept_encoding_header:
+            return (None, None, None)
+
         # We don't want to process extremely long headers. It might be an attack:
         accept_encoding_header = accept_encoding_header[:200]
         supported_client_encodings = {self.extract_encoding_name(e) for e in accept_encoding_header.split(",")}
