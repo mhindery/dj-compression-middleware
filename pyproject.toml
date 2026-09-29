@@ -13,12 +13,10 @@ readme = "README.md"
 requires-python = ">=3.10,<3.15"
 classifiers = [
     'Framework :: Django',
-    'Framework :: Django :: 4.0',
-    'Framework :: Django :: 4.1',
-    'Framework :: Django :: 4.2',
-    'Framework :: Django :: 5.0',
     'Framework :: Django :: 5.1',
     'Framework :: Django :: 5.2',
+    'Framework :: Django :: 6.0',
+    'Framework :: Django :: 6.1',
     'Intended Audience :: Developers',
     'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
     'Natural Language :: English',
@@ -30,6 +28,7 @@ classifiers = [
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: 3.15',
     'Programming Language :: Python :: Implementation :: CPython',
     'Programming Language :: Python :: Implementation :: PyPy',
     'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware',
@@ -46,14 +45,14 @@ dependencies = [
 version_file = "src/dj_compression_middleware/_version.py"
 
 [dependency-groups]
-dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.12.1"]
+dev = ["ipdb>=0.13.13", "ipython>=8.18.1", "ruff>=0.16.9"]
 tests = [
     "coverage>=7.5.3",
-    "pytest>=8.3.3",
-    "pytest-cov>=5.0.0",
-    "pytest-django>=4.8.0",
-    "pytest-env>=1.1.5",
-    "pytest-randomly>=3.15.0",
+    "pytest>=9.1",
+    "pytest-cov>=7.1.0",
+    "pytest-django>=4.14.0",
+    "pytest-env>=1.7.1",
+    "pytest-randomly>=5.0.0",
     "pytest-sugar>=1.0.0",
 ]
 
@@ -82,77 +81,17 @@ fix = true
 
 [tool.ruff.lint]
 preview = true
-select = [
-    # https://docs.astral.sh/ruff/rules/#rules
-    "A",
-    "ANN",
-    "ARG",
-    "ASYNC",
-    "B",
-    "BLE",
-    "C4",
-    "COM",
-    "D",
-    "DOC",
-    "E",
-    "F",
-    "FBT",
-    "FLY",
-    "FURB",
-    "G",
-    "I",
-    "ISC",
-    "N",
-    "PD",
-    "PERF",
-    "PGH",
-    "PIE",
-    "PL",
-    "PT",
-    "PTH",
-    "Q",
-    "R",
-    "RET",
-    "RSE",
-    "RUF",
-    "SIM",
-    "SLF",
-    "SLOT",
-    "T20",
-    "TRY",
-    "UP",
-]
+select = ["ALL"]
 
 ignore = [
-    "ANN002",  # Missing type annotations for *args
-    "ANN003",  # Missing type annotations for **kwargs
-    "ANN204",  # Missing return type annotation for special method `__init__`
-    "ANN401",  # Disallow Any type hints
-    "COM812",  # Trailing comma missing. The ruff format always removes this on e.g. a list of function arguments.
-    "D100",    # Missing docstring in public module
-    "D105",    # Missing docstring in magic method
-    "D106",    # Missing docstring in public nested class
-    "D202",    # No blank line after function docstring
-    "E501",    # Line too long
-    "ISC001",  # Conflicting with formatter
-    "PD011",   # pandas-use-of-dot-values. Ignored because it gives a lot of false positives every time .values is used on something.
-    "Q000",    # Single quotes found but double quotes preferred
-    "RUF012",  # mutable-class-default. Class attributes would required type annotations everywhere if enabled.
-    "TRY002",  # Create your own exception
-    "TRY003",  # Avoid specifying long messages outside the exception class
-    "PGH003",  # Require specific codes when silencing linting.
-    "FBT001",  # Boolean arguments in function calls
-    "FBT002",  # Boolean arguments in function calls
-    "RUF100",  # Report unused noqa directives. This clashes with the leniency from the ignore above this one.
-    "DOC501",  # Raised exception {id} missing from docstring
-    "PLR6301", # Not using self in a method
-    "DOC201",  # Not mentioning 'return' explicitly in a docstring
-    "A005",    # Module name is shadowing a python builtin module
+    "missing-copyright-notice",
+    "undocumented-public-module",
+    "suspicious-non-cryptographic-random-usage",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
-unfixable = ["T201"]
+unfixable = ["print"]
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
@@ -171,38 +110,24 @@ skip-magic-trailing-comma = true
 
 # 4. Ignore `E402` (import violations) in all `__init__.py` files, and in select subdirectories.
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["E402", "D104"]
-"**/{tests,docs,tools}/*" = [
-    "E402",
-    "D101",
-    "D102",
-    "D103",
-    "D107",
-    "ARG001",
-    "ANN201",
-    "PLR2004",
-    "PLR0914",
-    "PLR0915",
-]
+"__init__.py" = ["module-import-not-at-top-of-file", "undocumented-public-package"]
 "test*.py" = [
-    "E402",
-    "D101",
-    "D103",
-    "ANN201",
-    "ARG001",
-    "PLR2004",
-    "PLR0914",
-    "PLR0915",
+    "assert",
+    "no-self-use",
+    "undocumented-magic-method",
+    "mutable-class-default",
+    "undocumented-public-class",
+    "undocumented-public-method",
+    "undocumented-public-function",
+    "undocumented-public-init",
+    "unused-function-argument",
+    "missing-return-type-undocumented-public-function",
+    "magic-value-comparison",
+    "too-many-locals",
+    "non-empty-init-module",
+    "float-equality-comparison",
+    "too-many-statements",
 ]
-# Django-specific rules
-"**/migrations/*.py" = ["I", "D", "RUF012", "RUF001"]
-"**/factories.py" = ["D106", "D101"]
-"**/management/commands/*.py" = ["D101"]
-"apps.py" = ["D101", "D102", "PLC0415", "F401"]
-"admin.py" = ["D101", "D103", "D102", "RUF012", "ARG002"]
-"**/*views.py" = ["ARG002"]
-"forms.py" = ["D101", "RUF012"]
-"**/api/serializers.py" = ["D101"]
 
 [tool.ruff.lint.pylint]
 max-args = 20

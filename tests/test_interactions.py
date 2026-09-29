@@ -47,7 +47,7 @@ class GZipMiddlewareTest(SimpleTestCase):
         self.resp.content = self.compressible_string
         self.resp["Content-Type"] = "text/html; charset=UTF-8"
 
-    def get_response(self, request):  # noqa: ARG002
+    def get_response(self, request):  # ruff: ignore[unused-method-argument]
         return self.resp
 
     @staticmethod
@@ -96,7 +96,7 @@ class GZipMiddlewareTest(SimpleTestCase):
 
     def test_compress_file_response(self):
         """Compression is performed on FileResponse."""
-        with open(__file__, "rb") as file1:  # noqa: PTH123
+        with open(__file__, "rb") as file1:  # ruff: ignore[builtin-open]
 
             def get_response(req):
                 file_resp = FileResponse(file1)
@@ -104,7 +104,7 @@ class GZipMiddlewareTest(SimpleTestCase):
                 return file_resp
 
             r = GZipMiddleware(get_response)(self.req)
-            with open(__file__, "rb") as file2:  # noqa: FURB101, PTH123
+            with open(__file__, "rb") as file2:  # ruff: ignore[read-whole-file, builtin-open]
                 assert self.decompress(b"".join(r)) == file2.read()
             assert r.get("Content-Encoding") == "gzip"
             assert r.file_to_stream is not file1
@@ -143,7 +143,7 @@ class GZipMiddlewareTest(SimpleTestCase):
         of compression non-deterministic and prevent
         ConditionalGetMiddleware from recognizing conditional matches
         on gzipped content).
-        """  # noqa: D205
+        """  # ruff: ignore[missing-blank-line-after-summary]
         r1 = GZipMiddleware(self.get_response)(self.req)
         r2 = GZipMiddleware(self.get_response)(self.req)
         assert r1.content == r2.content
@@ -195,7 +195,7 @@ class ETagGZipMiddlewareTest(SimpleTestCase):
         response = GZipMiddleware(get_cond_response)(request)
         gzip_etag = response["ETag"]
         next_request = self.rf.get(
-            "/", HTTP_ACCEPT_ENCODING="gzip, deflate", HTTP_IF_NONE_MATCH=gzip_etag
+            "/", HTTP_ACCEPT_ENCODING="gzip, deflate", HTTP_IF_NONE_MATCH=gzip_etag,
         )
         next_response = ConditionalGetMiddleware(get_response)(next_request)
         assert next_response.status_code == 304

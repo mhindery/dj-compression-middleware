@@ -1,4 +1,4 @@
-
+# ruff: file-ignore[ambiguous-unicode-character-string]
 
 # Dummy text (aka Lorem ipsum) in Czech (credits: http://cs.blabot.net/) for testing compression
 UTF8_LOREM_IPSUM_IN_CZECH = """S úsilí kdepak využívat současníků test pivo ovcím šimpanze. silnějšímu, tj. a
@@ -39,4 +39,4 @@ UTF8_LOREM_IPSUM_IN_CZECH = """S úsilí kdepak využívat současníků test pi
                              a sněžilo dávných činila, nebyl ostrova s ředitelka ředitelka, nepřestaneme, pen
                              zionovaného k budoucnostzačne některé. Až horským zásad mé prokletých. Nobel dět
                              i zákonů emise. Klidné příčinou tradic plně vyvodíme doplňují a nejméně specific
-                             kého tvrdí. Jí smrt při umělé objevováním."""  # type: str  # noqa: RUF001
+                             kého tvrdí. Jí smrt při umělé objevováním."""

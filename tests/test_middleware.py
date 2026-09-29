@@ -12,30 +12,24 @@ from django.http import HttpResponse, StreamingHttpResponse
 from django.middleware.gzip import GZipMiddleware
 from django.test import RequestFactory, SimpleTestCase
 
-
-int2byte = struct.Struct(">B").pack
-
 from dj_compression_middleware.middleware import CompressionMiddleware, compressor
 
 from .utils import UTF8_LOREM_IPSUM_IN_CZECH
 
 
+int2byte = struct.Struct(">B").pack
+
+
 class FakeRequestAcceptsZstd:
-    META = {
-        "HTTP_ACCEPT_ENCODING": "gzip, deflate, sdch, br, zstd"
-    }
+    META = {"HTTP_ACCEPT_ENCODING": "gzip, deflate, sdch, br, zstd"}
 
 
 class FakeRequestAcceptsBrotli:
-    META = {
-        "HTTP_ACCEPT_ENCODING": "gzip, deflate, sdch, br"
-    }
+    META = {"HTTP_ACCEPT_ENCODING": "gzip, deflate, sdch, br"}
 
 
 class InvalidAcceptEcondingRequest:
-    META = {
-        "HTTP_ACCEPT_ENCODING": "text/plain,*/*; charset=utf-8"
-    }
+    META = {"HTTP_ACCEPT_ENCODING": "text/plain,*/*; charset=utf-8"}
 
 
 class FakeLegacyRequest:
@@ -78,11 +72,9 @@ class MiddlewareTestCase(TestCase):
         fake_response = FakeResponse(content=response_content)
 
         compression_middleware = CompressionMiddleware(lambda: fake_response)
-        response = compression_middleware.process_response(
-            fake_request, fake_response
-        )
+        response = compression_middleware.process_response(fake_request, fake_response)
 
-        decompressed_response = brotli.decompress(response.content)  # type: bytes
+        decompressed_response = brotli.decompress(response.content)
         assert response_content == decompressed_response.decode(encoding="utf-8")
         assert response.get("Vary") == "Accept-Encoding"
 
@@ -92,12 +84,10 @@ class MiddlewareTestCase(TestCase):
         fake_response = FakeResponse(content=response_content)
 
         compression_middleware = CompressionMiddleware(lambda: fake_response)
-        response = compression_middleware.process_response(
-            fake_request, fake_response
-        )
+        response = compression_middleware.process_response(fake_request, fake_response)
 
         cctx = zstd.ZstdDecompressor()
-        decompressed_response = cctx.decompress(response.content)  # type: bytes
+        decompressed_response = cctx.decompress(response.content)
         assert response_content == decompressed_response.decode(encoding="utf-8")
         assert response.get("Vary") == "Accept-Encoding"
 
@@ -105,23 +95,19 @@ class MiddlewareTestCase(TestCase):
         fake_request = FakeRequestAcceptsBrotli()
         response_content = UTF8_LOREM_IPSUM_IN_CZECH * 5
         fake_etag_content = '"foo"'
-        fake_response = FakeResponse(
-            content=response_content, headers={"ETag": fake_etag_content}
-        )
+        fake_response = FakeResponse(content=response_content, headers={"ETag": fake_etag_content})
 
         assert fake_response["ETag"] == fake_etag_content
 
         compression_middleware = CompressionMiddleware(lambda: fake_response)
-        response = compression_middleware.process_response(
-            fake_request, fake_response
-        )
+        response = compression_middleware.process_response(fake_request, fake_response)
 
-        decompressed_response = brotli.decompress(response.content)  # type: bytes
+        decompressed_response = brotli.decompress(response.content)
         assert response_content == decompressed_response.decode(encoding="utf-8")
 
         # note: this is where we differ from django-brotli
         # django-brotli's expectation:
-        # self.assertEqual(response["ETag"], '"foo;br\\"')
+        # self.assertEqual(response["ETag"], '"foo;br\\"')  # ruff: ignore[commented-out-code]
         # Django's expectation:
         assert response["ETag"] == 'W/"foo"'
 
@@ -134,9 +120,7 @@ class MiddlewareTestCase(TestCase):
         fake_response = FakeResponse(content=response_content)
 
         compression_middleware = CompressionMiddleware(lambda: fake_response)
-        response = compression_middleware.process_response(
-            fake_request, fake_response
-        )
+        response = compression_middleware.process_response(fake_request, fake_response)
 
         assert response_content == response.content.decode(encoding="utf-8")
         assert not response.has_header("Vary")
@@ -148,9 +132,7 @@ class MiddlewareTestCase(TestCase):
         fake_response = FakeResponse(content=response_content)
 
         compression_middleware = CompressionMiddleware(lambda: fake_response)
-        response = compression_middleware.process_response(
-            fake_request, fake_response
-        )
+        response = compression_middleware.process_response(fake_request, fake_response)
 
         django_gzip_middleware = GZipMiddleware(lambda: fake_response)
         django_gzip_middleware.process_response(fake_request, fake_response)
@@ -166,14 +148,10 @@ class MiddlewareTestCase(TestCase):
         fake_response = FakeResponse(content=response_content)
 
         compression_middleware = CompressionMiddleware(lambda: fake_response)
-        response = compression_middleware.process_response(
-            fake_request, fake_response
-        )
+        response = compression_middleware.process_response(fake_request, fake_response)
 
         django_gzip_middleware = GZipMiddleware(lambda: fake_response)
-        gzip_response = django_gzip_middleware.process_response(
-            fake_request, fake_response
-        )
+        gzip_response = django_gzip_middleware.process_response(fake_request, fake_response)
 
         assert response_content == response.content.decode(encoding="utf-8")
         assert gzip_response.content.decode(encoding="utf-8") == response.content.decode(encoding="utf-8")
@@ -188,12 +166,8 @@ class MiddlewareTestCase(TestCase):
         compression_middleware = CompressionMiddleware(lambda: fake_response)
         django_gzip_middleware = GZipMiddleware(lambda: fake_response)
 
-        gzip_response = django_gzip_middleware.process_response(
-            fake_request, fake_response
-        )
-        response = compression_middleware.process_response(
-            fake_request, gzip_response
-        )
+        gzip_response = django_gzip_middleware.process_response(fake_request, fake_response)
+        response = compression_middleware.process_response(fake_request, gzip_response)
 
         assert response_content == gzip_decompress(response.content).decode(encoding="utf-8")
         assert response.get("Vary") == "Accept-Encoding"
@@ -209,7 +183,7 @@ class MiddlewareTestCase(TestCase):
         assert compressor("text/plain,*/*; charset=utf-8")[0] is None  # PR #12
         assert compressor("gzip;q==1")[0] == "gzip"  # questionable
         assert compressor("br;gzip")[0] == "br"  # questionable
-        #         self.assertEqual(compressor("br;q=0, gzip;q=0.8, *;q=0.1")[0], "gzip")
+        assert compressor("br;q=0, gzip;q=0.8, *;q=0.1")[0] == "gzip"
         assert compressor("*")[0] == "zstd"
 
 
@@ -249,9 +223,7 @@ class StreamingTest(SimpleTestCase):
 
     def test_compress_streaming_response_unicode(self):
         """Compression is performed on responses with streaming Unicode content."""
-        r = CompressionMiddleware(lambda: self.stream_resp_unicode).process_response(
-            self.req, self.stream_resp_unicode
-        )
+        r = CompressionMiddleware(lambda: self.stream_resp_unicode).process_response(self.req, self.stream_resp_unicode)
         assert brotli.decompress(b"".join(r)) == b"".join(x.encode("utf-8") for x in self.sequence_unicode)
         assert r.get("Content-Encoding") == "br"
         assert not r.has_header("Content-Length")
