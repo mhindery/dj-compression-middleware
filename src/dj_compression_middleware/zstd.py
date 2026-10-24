@@ -13,12 +13,12 @@ from django.utils.text import StreamingBuffer
 DEFAULT_LEVEL = 7
 
 
-def zstd_compress(content):  # noqa: D103
+def zstd_compress(content):  # ruff: ignore[undocumented-public-function]
     cctx = zstd.ZstdCompressor(level=DEFAULT_LEVEL)
     return cctx.compress(content)
 
 
-def zstd_compress_stream(sequence):  # noqa: D103
+def zstd_compress_stream(sequence):  # ruff: ignore[undocumented-public-function]
     buf = StreamingBuffer()
     cctx = zstd.ZstdCompressor(level=DEFAULT_LEVEL)
     with cctx.stream_writer(buf, write_return_read=False) as compressor:

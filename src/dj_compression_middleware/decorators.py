@@ -12,4 +12,3 @@ from .middleware import CompressionMiddleware
 
 compress_page = decorator_from_middleware(CompressionMiddleware)
 compress_page.__doc__ = "Decorator to compress the view response if the client supports it."
-
