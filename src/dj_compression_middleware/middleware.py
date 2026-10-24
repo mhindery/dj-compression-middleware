@@ -1,95 +1,129 @@
-__all__ = ["CompressionMiddleware"]
+import logging
+from collections.abc import Callable, Iterable
+from functools import partial
+from inspect import iscoroutinefunction, markcoroutinefunction
 
-
-from django import VERSION as DJANGO_VERSION
-from django.http import HttpRequest, HttpResponse
-from django.middleware.gzip import compress_sequence as gzip_compress_stream, compress_string as gzip_compress
+from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from django.utils.cache import patch_vary_headers
 
 from .br import brotli_compress, brotli_compress_stream
+from .gzip import compress_sequence as gzip_compress_stream, compress_string as gzip_compress
+from .zlib import compress_sequence as zlib_compress_stream, compress_string as zlib_compress
 from .zstd import zstd_compress, zstd_compress_stream
 
 
-try:
-    from django.utils.deprecation import MiddlewareMixin
-except ImportError:  # pragma: no cover
-    MiddlewareMixin = object
+logger = logging.getLogger(__name__)
 
 
-# Minimum response length before we'll consider compression. Small responses
-# won't necessarily be smaller after compression, and we want to save at least
-# enough to make the time expended worthwhile. Since MTUs around 1500 are
-# common, and HTTP headers are often more than 500 bytes (more so if there
-# are cookies), we guess that responses smaller than 500 bytes is likely to fit
-# in the MTU (or not) mostly due to other factors, not compression.
-MIN_LEN = 500
+class CompressionMiddleware:
+    """Middleware to compress the response content if the browser allows gzip, brotli or zstd compression."""
 
-# The compression has to reduce the length, otherwise we're just fooling
-# around. Since we'll have to add the Content-Encoding header, we need to
-# make that addition worthwhile, too. So the compressed response must be
-# smaller by some margin. This value should be at least 24 which is
-# len("Content-Encoding: gzip\r\n"), but a bigger value could reflect that a
-# non-trivial improvement in transfer time is required to make up for the time
-# required for decompression. An improvement of a few bytes is unlikely to
-# actually reduce the network communication in terms of MTUs.
-MIN_IMPROVEMENT = 100
+    sync_capable = True
+    async_capable = True
 
+    # For gzip, we add some random bytes to the end of the content to make it more difficult for attackers to use BREACH attacks to extract information from compressed responses.  # ruff: ignore[line-too-long]
+    # This is a common mitigation strategy for such attacks. The number of random bytes added can be adjusted based on the desired level of security and performance trade-offs.  # ruff: ignore[line-too-long]
+    # A value of 100 is often considered a reasonable choice, as it provides a significant amount of randomness without adding too much overhead to the response size.  # ruff: ignore[line-too-long]
+    MAX_RANDOM_BYTES = 100
 
-# supported encodings in order of preference
-# (encoding, bulk_compressor, stream_compressor) # ruff: ignore[commented-out-code]
-compressors = (
-    ("zstd", zstd_compress, zstd_compress_stream),
-    ("br", brotli_compress, brotli_compress_stream),
-    ("gzip", gzip_compress, gzip_compress_stream),
-)
+    # If a response is less than 500 bytes, it is not worth compressing.
+    # It would fit uncompressed in a single MTU, and the overhead of compression would likely outweigh any benefits.
+    MIN_LEN = 500
 
+    # The minimum gain required to justify compression.
+    # If the compressed content is not at least this many bytes smaller than the original content, then the original content will be returned uncompressed.  # ruff: ignore[line-too-long]
+    # This is to avoid the overhead of compression when it doesn't provide a significant reduction in size.
+    # The overhead if the addition of the Content-Encoding header is 24 bytes + the decompression effort on the client.
+    MIN_IMPROVEMENT = 100
 
-def encoding_name(s: str) -> str | None:
-    """Obtain 'br' out of ' br;q=0.5' or similar.
+    # Tweak compression settings
+    ZSTD_LEVEL = 7
+    BROTLI_QUALITY = 4
+    GZIP_COMPRESSLEVEL = 6
+    ZLIB_COMPRESSLEVEL = -1
 
-    Returns the encoding name if found, otherwise None.
-    """
-    # We won't break if the ordering is specified with q=, but we ignore it.
-    # Only a quality level of 0 is honoured -- in such a case we handle it as
-    # if the encoding wasn't specified at all.
-    if ";" in s:
-        s, q = s.split(";", 1)
-        if "=" in q:
-            _, q = q.split("=", 1)
-            try:
-                q = float(q)
-                if q == 0.0:  # ruff: ignore[float-equality-comparison]
-                    return None
-            except ValueError:
-                pass
-    return s.strip()
+    COMPRESSORS: tuple[tuple[str, Callable[[bytes], bytes], Callable[[Iterable[bytes]], Iterable[bytes]]], ...]
 
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse | StreamingHttpResponse]) -> None:  # ruff: ignore[undocumented-public-init]
+        self.get_response = get_response
 
-def compressor(accept_encoding):
-    # We don't want to process extremely long headers. It might be an attack:
-    accept_encoding = accept_encoding[:200]
-    client_encodings = {encoding_name(e) for e in accept_encoding.split(",")}
-    if "*" in client_encodings:
-        # Our first choice:
-        return compressors[0]
-    for compressor in compressors:
-        if compressor[0] in client_encodings:
-            return compressor
-    return (None, None, None)
+        self.is_async = iscoroutinefunction(get_response)
+        if self.is_async:
+            markcoroutinefunction(self)
 
+        # supported encodings in order of preference
+        # (encoding, bulk_compressor, stream_compressor)  # ruff: ignore[commented-out-code]
+        self.COMPRESSORS = (
+            (
+                "zstd",
+                partial(
+                    zstd_compress,
+                    level=self.ZSTD_LEVEL,
+                ),
+                partial(
+                    zstd_compress_stream,
+                    level=self.ZSTD_LEVEL,
+                ),
+            ),
+            (
+                "br",
+                partial(
+                    brotli_compress,
+                    quality=self.BROTLI_QUALITY,
+                ),
+                partial(
+                    brotli_compress_stream,
+                    quality=self.BROTLI_QUALITY,
+                ),
+            ),
+            (
+                "gzip",
+                partial(
+                    gzip_compress,
+                    compresslevel=self.GZIP_COMPRESSLEVEL,
+                    max_random_bytes=self.MAX_RANDOM_BYTES,
+                ),
+                partial(
+                    gzip_compress_stream,
+                    compresslevel=self.GZIP_COMPRESSLEVEL,
+                    max_random_bytes=self.MAX_RANDOM_BYTES,
+                ),
+            ),
+            (
+                "deflate",
+                partial(
+                    zlib_compress,
+                    level=self.ZLIB_COMPRESSLEVEL,
+                ),
+                partial(
+                    zlib_compress_stream,
+                    level=self.ZLIB_COMPRESSLEVEL,
+                ),
+            ),
+        )
 
-class CompressionMiddleware(MiddlewareMixin):
-    """Compress content if the browser allows gzip, brotli or zstd compression.
+    def __call__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # ruff: ignore[undocumented-public-method]
+        if self.is_async:
+            return self.__acall__(request)  # ty: ignore[invalid-return-type]
 
-    Set the Vary header accordingly, so that caches will base their storage
-    on the Accept-Encoding header.
-    """
+        response = self.get_response(request)
+        return self.process_response(request, response)
 
-    max_random_bytes = 100
+    async def __acall__(self, request: HttpRequest) -> HttpResponse | StreamingHttpResponse:  # ruff: ignore[undocumented-magic-method, bad-dunder-method-name]
+        response = await self.get_response(request)  # ty:ignore[invalid-await]
+        return self.process_response(request, response)
 
-    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:  # ruff: ignore[undocumented-public-method]
+    def process_response(
+        self,
+        request: HttpRequest,
+        response: HttpResponse | StreamingHttpResponse,
+    ) -> HttpResponse | StreamingHttpResponse:
+        """Compress the response content if the client and response allows it and if it's worth compressing."""
+        if getattr(response, "no_compress", False) or getattr(self.get_response, "no_compress", False):
+            return response
+
         # It's not worth attempting to compress really short responses.
-        if not response.streaming and len(response.content) < MIN_LEN:
+        if not response.streaming and len(response.content) < self.MIN_LEN:
             return response
 
         # Avoid compression if we've already got a content-encoding.
@@ -98,36 +132,33 @@ class CompressionMiddleware(MiddlewareMixin):
 
         patch_vary_headers(response, ("Accept-Encoding",))
 
-        ae = request.META.get("HTTP_ACCEPT_ENCODING", "")
-        encoding, compress_string, compress_sequence = compressor(ae)
+        encoding, compress_string, compress_sequence = self.get_supported_compressor(
+            request.headers.get("Accept-Encoding", ""),
+        )
         if encoding is None:
-            # No compression in common with client (the client probably didn't indicate support for anything).
+            # Client didn't indicate support for anything we can do, so just return the original response.
             return response
-
-        compress_kwargs = {}
-        if encoding == "gzip" and DJANGO_VERSION >= (4, 2):
-            compress_kwargs["max_random_bytes"] = self.max_random_bytes
 
         if response.streaming:
             if getattr(response, "is_async", False):
                 # forward args explicitly to capture fixed references in case they are set again later.
-                async def compress_wrapper(streaming_content, **compress_kwargs):
-                    async for chunk in streaming_content:
-                        yield compress_string(chunk, **compress_kwargs)
+                async def compress_wrapper(streaming_content: Iterable[bytes]) -> Iterable[bytes]:  # ty:ignore[invalid-return-type]
+                    async for chunk in streaming_content:  # ty:ignore[not-iterable]
+                        yield compress_string(chunk)  # ty:ignore[call-non-callable]
 
-                response.streaming_content = compress_wrapper(response.streaming_content, **compress_kwargs)
+                response.streaming_content = compress_wrapper(response.streaming_content)  # ty:ignore[invalid-assignment, unresolved-attribute]
             else:
-                response.streaming_content = compress_sequence(response.streaming_content, **compress_kwargs)
+                response.streaming_content = compress_sequence(response.streaming_content)  # ty:ignore[call-non-callable, invalid-assignment, unresolved-attribute]
 
             # Delete the `Content-Length` header for streaming content, because
             # we won't know the compressed size until we stream it.
             del response.headers["Content-Length"]
         else:
             # Return the compressed content only if it's actually shorter.
-            compressed_content = compress_string(response.content, **compress_kwargs)
-            if len(response.content) - len(compressed_content) < MIN_IMPROVEMENT:
+            compressed_content = compress_string(response.content)  # ty:ignore[call-non-callable]
+            if len(response.content) - len(compressed_content) < self.MIN_IMPROVEMENT:
                 return response
-            response.content = compressed_content
+            response.content = compressed_content  # ty:ignore[invalid-assignment]
             response.headers["Content-Length"] = str(len(response.content))
 
         # If there is a strong ETag, make it weak to fulfill the requirements
@@ -136,6 +167,65 @@ class CompressionMiddleware(MiddlewareMixin):
         etag = response.headers.get("ETag")
         if etag and etag.startswith('"'):
             response.headers["ETag"] = "W/" + etag
+
         response.headers["Content-Encoding"] = encoding
 
         return response
+
+    def get_supported_compressor(
+        self,
+        accept_encoding_header: str,
+    ) -> (
+        tuple[str, Callable[[bytes], bytes] | None, Callable[[Iterable[bytes]], Iterable[bytes]] | None]
+        | tuple[None, None, None]
+    ):
+        """Determine the best compressor to use based on the Accept-Encoding incoming request header.
+
+        Returns a tuple of (encoding_name, bulk_compressor, stream_compressor).
+        Returns (None, None, None) if no suitable compressor is found.
+        """
+        # If everything is supported, just take the first one we prefer.
+        if accept_encoding_header == "*":
+            return self.COMPRESSORS[0]
+
+        # If nothing is specified at all, we should not compress and short-circuit to returning None.
+        # E.g. the django.test.client has an empty Accept-Encoding header.
+        if not accept_encoding_header:
+            return (None, None, None)
+
+        # We don't want to process extremely long headers. It might be an attack:
+        accept_encoding_header = accept_encoding_header[:200]
+        supported_client_encodings = {self.extract_encoding_name(e) for e in accept_encoding_header.split(",")}
+
+        for encoding, compress_string, compress_sequence in self.COMPRESSORS:
+            if encoding in supported_client_encodings:
+                return encoding, compress_string, compress_sequence
+
+        return (None, None, None)
+
+    def extract_encoding_name(self, specifier: str) -> str | None:
+        """Return the encoding name from a string like 'br;q=0.5' (which would return 'br).
+
+        If the quality level is 0, return None to indicate that the encoding is not acceptable.
+
+        If the extracted encoding name is unrecognized, return None to indicate that the encoding is not acceptable.
+        """
+        # We won't break if the ordering is specified with q=, but we ignore it.
+        # Only a quality level of 0 is honoured -- in such a case we handle it as
+        # if the encoding wasn't specified at all.
+        if ";" in specifier:
+            specifier, quality_level = specifier.split(";", 1)
+            if "=" in quality_level:
+                _, quality_level = quality_level.split("=", 1)
+                try:
+                    if float(quality_level) == 0.0:  # ruff: ignore[float-equality-comparison]
+                        return None
+                except ValueError:
+                    pass
+        specifier = specifier.strip()
+
+        if specifier not in [encoding for encoding, _, _ in self.COMPRESSORS]:
+            logger.warning("Unrecognized encoding: %s", specifier, extra={"specifier": specifier})
+            return None
+
+        return specifier

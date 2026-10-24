@@ -4,71 +4,108 @@
 name: Python package
 
 on:
-  push:
-    branches: ["master", "main"]
-    tags: ["*"]
-  pull_request:
-    branches: ["master", "main"]
+  push: {}
+
+  workflow_dispatch: {}
 
 jobs:
-  check-test:
+  static-analysis:
     runs-on: ubuntu-slim
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
-        django-version: ["5.2", "6.0", "6.1"]
+        python-version: ["cpython@3.12", "cpython@3.13", "cpython@3.14", "cpython@3.14t", "cpython@3.15", "cpython@3.15t"]
+        django-version: ["django==5.2" , "django==6.0", "django==6.1", "django @ git+https://github.com/django/django"]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install uv
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          enable-cache: "false"
       - name: Install the project
         run: |
-          uv sync --python ${{ matrix.python-version }} --all-extras --frozen --compile-bytecode --group dev --group tests
-          uv add "django==${{ matrix.django-version }}"
+          uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups --no-install-package django
+          uv add "${{ matrix.django-version }}"
       - name: Lint with ruff
-        run: |
-          uv run ruff check --no-fix --output-format full --target-version py39
-      - name: Test with pytest
-        run: |
-          uv run pytest
+        run: uv run ruff check --no-fix
+      - name: Lint with ty
+        run: uv run ty check
 
-  build:
-    name: >-
-      Build the Python package
-    needs:
-      - check-test
-    runs-on: ubuntu-latest
+  tests:
+    runs-on: ubuntu-slim
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["cpython@3.12", "cpython@3.13", "cpython@3.14", "cpython@3.14t", "cpython@3.15", "cpython@3.15t"]
+        django-version: ["django==5.2" , "django==6.0", "django==6.1", "django @ git+https://github.com/django/django"]
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: "false"
+      - name: Install the project
+        run: |
+          uv sync --python ${{ matrix.python-version }} --frozen --all-extras --all-groups --no-install-package django
+          uv add "${{ matrix.django-version }}"
+      - name: Test with pytest
+        env:
+          PYTEST_ADDOPTS: "--color=yes"
+        run: uv run pytest
+
+  build:
+    name: Build the Python package
+    needs:
+      - static-analysis
+      - tests
+    runs-on: ubuntu-slim
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - name: Set up Python "3.12"
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+          enable-cache: "false"
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v4.5.0
+      - name: Determine Version
+        id: version_step # step id used as a reference for output values
+        uses: gittools/actions/gitversion/execute@v4.5.0
         with:
-          python-version: "3.12"
+          overrideConfig: |
+            mode: MainLine
       - name: Build the package
         run: |
-          uv build
+          if [[ "$GitVersion_BranchName" == "master" ]]; then
+            python_package_version="$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch"
+          else
+            python_package_version="$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch.dev+$GitVersion_BranchName.$GitVersion_CommitsSinceVersionSource.$GitVersion_ShortSha"
+          fi
+
+          uv version $python_package_version
+          uv build --clear --no-sources
       - name: Store the distribution packages
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: python-package-distributions
           path: dist/
+      - name: Create Tag
+        run: |
+          if [[ "$GitVersion_BranchName" == "master" ]]; then
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git tag -a "$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch" -m "Release $GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch"
+            git push origin "$GitVersion_Major.$GitVersion_Minor.$GitVersion_Patch"
+          fi
 
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/') # only publish to PyPI on tag pushes
+    if: github.ref == 'refs/heads/master'
     needs:
       - build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     environment:
       name: pypi
       url: https://pypi.org/p/dj-compression-middleware # Replace <package-name> with your PyPI project name
@@ -76,10 +113,14 @@ jobs:
       id-token: write
 
     steps:
-      - name: Download all the dists
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          enable-cache: "false"
+      - name: Download the distribution package
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: python-package-distributions
           path: dist/
-      - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+      - name: Pulish the package
+        run: uv publish
