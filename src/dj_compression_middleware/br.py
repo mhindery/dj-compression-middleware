@@ -18,7 +18,7 @@ def brotli_compress_stream(sequence: Iterable[bytes], quality: int = DEFAULT_LEV
         # Brotli bindings
         process = compressor.process
     except AttributeError:
-        # brotlipy
+        # brotlicffi bindings
         process = compressor.compress
 
     for item in sequence:

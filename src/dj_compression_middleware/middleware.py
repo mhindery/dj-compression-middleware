@@ -113,7 +113,7 @@ class CompressionMiddleware:
         response = await self.get_response(request)  # ty:ignore[invalid-await]
         return self.process_response(request, response)
 
-    def process_response(  # ruff: ignore[complex-structure]
+    def process_response(
         self,
         request: HttpRequest,
         response: HttpResponse | StreamingHttpResponse,

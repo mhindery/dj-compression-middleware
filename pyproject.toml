@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.12,<0.13"]
+requires = ["uv_build>=0.13.5"]
 build-backend = "uv_build"
 
 [project]
@@ -8,7 +8,7 @@ authors = [
     { name = "Mathieu Hinderyckx", email = "mathieu.hinderyckx@gmail.com" },
 ]
 description = "Django middleware to compress responses with gzip, brotli and zstd."
-version = "0.0.1.dev0"
+version = "0.0.3"
 readme = "README.md"
 requires-python = ">=3.12,<3.16"
 classifiers = [
@@ -30,12 +30,12 @@ classifiers = [
     'Topic :: Internet :: WWW/HTTP :: ASGI :: Middleware',
 ]
 dependencies = [
-    "brotli>=1.1.0 ; platform_python_implementation != 'PyPy'",
-    "brotlipy>=0.7.0 ; platform_python_implementation == 'PyPy'",
+    "brotli>=1.2.1 ; platform_python_implementation != 'PyPy'",
+    "brotlicffi>=1.2.1.0 ; platform_python_implementation == 'PyPy'",
     "django>=5.2",
     # Python 3.14+ provides `compression.zstd` in the standard library (PEP 784),
     # so the third-party package is only needed on older interpreters.
-    "zstandard>=0.24.0 ; python_version < '3.14'",
+    "zstandard>=0.25.0 ; python_version < '3.14'",
 ]
 
 [tool.setuptools_scm]
@@ -45,7 +45,7 @@ version_file = "src/dj_compression_middleware/_version.py"
 dev = [
     "ipdb>=0.13.13",
     "ipython>=8.18.1",
-    "ruff>=0.16.9",
+    "ruff>=0.17.2",
     "ty>=0.0.84",
 ]
 tests = [
@@ -72,7 +72,6 @@ environments = [
 line-length = 120
 indent-width = 4
 preview = false
-required-version = ">=0.16.9"
 target-version = "py312"
 unsafe-fixes = true
 
@@ -87,7 +86,8 @@ select = ["ALL"]
 ignore = [
     "missing-copyright-notice",
     "undocumented-public-module",
-    "suspicious-non-cryptographic-random-usage",
+    "legacy-type-comment",
+    "complex-structure",
     "docstring-missing-returns",
 ]
 
@@ -109,11 +109,8 @@ exclude = ["*.pyi", "**/migrations/*.py"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["module-import-not-at-top-of-file", "undocumented-public-package"]
-"test*.py" = [
-    "assert",
-    "no-self-use",
-    "undocumented-magic-method",
-    "mutable-class-default",
+"**/{tests,docs,tools}/*" = [
+    "module-import-not-at-top-of-file",
     "undocumented-public-class",
     "undocumented-public-method",
     "undocumented-public-function",
@@ -122,10 +119,42 @@ exclude = ["*.pyi", "**/migrations/*.py"]
     "missing-return-type-undocumented-public-function",
     "magic-value-comparison",
     "too-many-locals",
-    "non-empty-init-module",
-    "float-equality-comparison",
     "too-many-statements",
+    "assert",
+    "mutable-class-default",
+    "suspicious-non-cryptographic-random-usage",
+    "no-self-use",
+    "undocumented-magic-method",
+    "non-empty-init-module",
 ]
+"test*.py" = [
+    "module-import-not-at-top-of-file",
+    "undocumented-public-class",
+    "undocumented-public-function",
+    "missing-return-type-undocumented-public-function",
+    "unused-function-argument",
+    "magic-value-comparison",
+    "too-many-locals",
+    "too-many-statements",
+    "assert",
+    "mutable-class-default",
+    "suspicious-non-cryptographic-random-usage",
+    "no-self-use",
+    "undocumented-magic-method",
+]
+# Django-specific rules
+"**/migrations/*.py" = ["I", "D", "mutable-class-default", "ambiguous-unicode-character-string"]
+"**/factories.py" = ["undocumented-public-nested-class", "undocumented-public-class"]
+"**/management/commands/*.py" = ["undocumented-public-class"]
+"apps.py" = ["undocumented-public-class", "undocumented-public-method", "import-outside-top-level", "unused-import"]
+"admin.py" = ["undocumented-public-class", "undocumented-public-function", "undocumented-public-method", "mutable-class-default", "unused-method-argument"]
+"**/*views.py" = ["unused-method-argument"]
+"forms.py" = ["undocumented-public-class", "mutable-class-default"]
+"**/api/serializers.py" = ["undocumented-public-class"]
+
+[tool.ruff.lint.pylint]
+max-args = 20
+max-positional-args = 20
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

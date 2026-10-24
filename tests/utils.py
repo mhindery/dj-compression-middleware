@@ -1,5 +1,3 @@
-
-
 # Dummy text (aka Lorem ipsum) in Czech (credits: http://cs.blabot.net/) for testing compression
 UTF8_LOREM_IPSUM_IN_CZECH = """S úsilí kdepak využívat současníků test pivo ovcím šimpanze. silnějšímu, tj. a
                              nezadal odeženou hlavu bránil do neúspěšné, silnějšímu, tj. zní ke svítí proběhl
